@@ -1,6 +1,6 @@
 # 🧪 common-zeebe-test
 
-**Common Zeebe Test** is a dedicated module designed to provide a robust setup for **integrative testing** of  BPMN processes, orchestrated by-zeebe.
+**Common Zeebe Test** is a dedicated module designed to provide a robust setup for **integrative testing** of  BPMN processes, orchestrated by zeebe.
 
 This module serves as a reusable foundation for other projects, like the **example-service**, allowing seamless and efficient testing of BPMN workflows.
 
