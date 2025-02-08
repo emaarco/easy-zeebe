@@ -20,10 +20,10 @@ You might notice we're not using Zeebe's native **`@JobWorker`** Spring annotati
 
 This example-service relies on the plain `zeebe-process-test` framework for testing, 
 as it's (in my opinion) the only library offering sufficient functionality for **Zeebe 8.6**.
-However, this framework does **not** support Spring-based  tests, 
+However, this framework does **not** support Spring-based tests, 
 which is why we manage worker registration manually with our own worker classes.
 
-### Why not use the existing Spring testing tools?
+### Why are we using plain zeebe-process-test?
 
 - **[`spring-boot-starter-camunda-test`](https://mvnrepository.com/artifact/io.camunda.spring/spring-boot-starter-camunda-test)** is no longer supported for 8.6.
 - **[`camunda-process-test-spring`](https://github.com/camunda/camunda/tree/main/testing/camunda-process-test-spring)** aims to replace both `spring-boot-starter-camunda-test` and `zeebe-process-test` in the future, but it's currently in **alpha** and has a limited feature set.
@@ -31,7 +31,7 @@ which is why we manage worker registration manually with our own worker classes.
 We might revert to Spring-based testing once future versions provide better support. 
 **Stay tuned for updates!** 🚀
 
-## 🛠️ How to Use
+## 📌 How to Use
 
 Include **common-zeebe** as a dependency in your service modules 
 to integrate and interact with the Zeebe engine efficiently.

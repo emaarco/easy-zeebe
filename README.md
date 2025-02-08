@@ -8,7 +8,7 @@ Whether you're just getting started with Zeebe or looking for a reliable testing
 
 The repository is organized as follows:
 
-- \`/services\`: Contains the zeebe-example-service, including modules for integrating andng Zeebe.
+- **`/services`**: Contains the zeebe-example-service, including modules for integrating and testing Zeebe.
 - **`/stack`**: Infrastructure setup (like Zeebe and other dependencies) to run the examples.
 - **`/bruno`**: Example requests to interact with the service using [Bruno](https://www.usebruno.com/).
 - **`/run`**: IntelliJ run configurations to easily start the service.
