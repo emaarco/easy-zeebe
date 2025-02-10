@@ -6,7 +6,6 @@ import de.emaarco.common.test.zeebe.setup.JobWorkerManager
 import de.emaarco.common.test.zeebe.setup.ResourceDeployer
 import de.emaarco.common.zeebe.worker.DefaultJobWorker
 import io.camunda.zeebe.client.ZeebeClient
-import io.camunda.zeebe.client.api.response.ProcessInstanceEvent
 import io.camunda.zeebe.process.test.api.ZeebeTestEngine
 import io.camunda.zeebe.process.test.assertions.BpmnAssert
 import io.camunda.zeebe.process.test.assertions.ProcessInstanceAssert

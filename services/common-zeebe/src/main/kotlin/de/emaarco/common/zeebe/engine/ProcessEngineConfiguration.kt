@@ -15,7 +15,7 @@ class ProcessEngineConfiguration {
     )
 
     @Bean
-    fun jobWorkerManager(
+    fun customJobWorkerManager(
         zeebeClient: ZeebeClient,
         jobWorkers: List<DefaultJobWorker>
     ) = JobWorkerManager(
