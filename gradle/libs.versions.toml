@@ -1,14 +1,14 @@
 [versions]
-spring_version = "3.4.2"
+spring_version = "3.4.3"
 spring_dependency_version = "1.1.7"
-mockk_version = "1.13.16"
+mockk_version = "1.13.17"
 spring_mockk_version = "4.0.2"
 kotlin_version = "2.1.10"
 kotlin_logging_version = "3.0.5"
-kotlin_jackson = "2.18.2"
+kotlin_jackson = "2.18.3"
 mockito_version = "5.2.0"
 kotlin_mockito_version = "5.4.0"
-zeebe_version = "8.6.9"
+zeebe_version = "8.6.10"
 postgres_version = "42.7.5"
 
 [libraries]
