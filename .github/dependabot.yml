@@ -16,7 +16,7 @@ updates:
           - "major"
 
   # Config for docker-compose
-  - package-ecosystem: docker-compose
+  - package-ecosystem: "docker-compose"
     directory: "/"
     schedule:
       interval: monthly
