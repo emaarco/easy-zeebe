@@ -12,4 +12,19 @@ updates:
           - "*"
         update-types:
           - "patch"
+          - "minor"
+          - "major"
+
+  # Config for docker-compose
+  - package-ecosystem: docker-compose
+    directory: "/"
+    schedule:
+      interval: monthly
+    groups:
+      docker-compose:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
           - "major"
