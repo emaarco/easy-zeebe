@@ -6,7 +6,3 @@ camunda:
       grpc-address: http://localhost:26500
       rest-address: http://localhost:9600
       prefer-rest-over-grpc: false
-
-logging:
-  level:
-    io.camunda.zeebe.client.impl.ZeebeCallCredentials: ERROR
