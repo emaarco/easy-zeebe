@@ -41,3 +41,13 @@ tasks.register<GenerateBpmnModelsTask>("generateBpmnModels") {
 tasks.test {
     useJUnitPlatform()
 }
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+kotlin {
+    jvmToolchain(21)
+}

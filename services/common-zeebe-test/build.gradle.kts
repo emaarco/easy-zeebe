@@ -27,3 +27,13 @@ tasks.bootJar {
 tasks.jar {
     enabled = true
 }
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+kotlin {
+    jvmToolchain(21)
+}
