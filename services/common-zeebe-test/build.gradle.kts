@@ -14,10 +14,8 @@ repositories {
 
 dependencies {
     implementation(project(":services:common-zeebe"))
-    implementation(libs.kotlin.jackson)
     implementation(libs.zeebeSdk)
     implementation(libs.zeebeProcessTest)
-    implementation(libs.bundles.test)
 }
 
 tasks.bootJar {

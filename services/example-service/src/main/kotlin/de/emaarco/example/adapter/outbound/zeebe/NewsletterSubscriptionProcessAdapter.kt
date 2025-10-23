@@ -11,10 +11,10 @@ class NewsletterSubscriptionProcessAdapter(
     private val engineApi: ProcessEngineApi
 ) : NewsletterSubscriptionProcess {
 
-    override fun submitForm(id: SubscriptionId) {
+    override fun submitForm(id: SubscriptionId): Long {
         val variables = mapOf("subscriptionId" to id.value.toString())
-        engineApi.startProcessViaMessage(
-            messageName = NewsletterSubscriptionProcessApi.Messages.Message_FormSubmitted,
+        return engineApi.startProcess(
+            processId = NewsletterSubscriptionProcessApi.PROCESS_ID,
             variables = variables
         )
     }

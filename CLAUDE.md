@@ -26,7 +26,7 @@ Easy Zeebe is a Spring Boot-based example project demonstrating Zeebe process en
    cd stack
    docker-compose up -d
    ```
-   This starts PostgreSQL, Zeebe, Operate UI, and Elasticsearch.
+   This starts PostgreSQL, Camunda Platform (unified Zeebe, Operate, Tasklist), and Elasticsearch.
 
 2. **Run Backend**:
    ```bash
@@ -105,7 +105,7 @@ npm run type-check
 ### Configuration
 - **application.yaml**: Database and application configuration
 - **zeebe-application.yaml**: Zeebe-specific configuration loaded via custom property source
-- **docker-compose.yml**: Complete infrastructure stack including Zeebe, PostgreSQL, Elasticsearch, and Operate
+- **docker-compose.yml**: Complete infrastructure stack including Camunda Platform 8.8 (unified orchestration), PostgreSQL, and Elasticsearch
 
 ### BPMN Processing
 - BPMN files located in `src/main/resources/bpmn/`
@@ -136,7 +136,7 @@ npm run type-check
 - **Frontend UI**: http://localhost:3000
 - **Backend API**: http://localhost:8081
 - **Zeebe Gateway**: localhost:26500
-- **Operate UI**: http://localhost:9081
+- **Camunda Web UI** (Operate/Tasklist): http://localhost:8080
 - **PostgreSQL**: localhost:5432 (admin/admin)
 - **Elasticsearch**: http://localhost:9200
 
