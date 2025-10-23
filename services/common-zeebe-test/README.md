@@ -1,23 +1,30 @@
 # 🧪 common-zeebe-test
 
-**Common Zeebe Test** is a dedicated module designed to provide a robust setup for **integrative testing** of  BPMN processes, orchestrated by zeebe.
+**Common Zeebe Test** provides shared test configuration for testing BPMN processes with Camunda Platform 8.
 
-This module serves as a reusable foundation for other projects, like the **example-service**, allowing seamless and efficient testing of BPMN workflows.
+This module provides reusable test configuration that can be used across multiple services.
 
-## 🔧 Key Features
+## 📌 What's Included
 
-- **Integrated Process Testing**: Easily test your BPMN processes within a Zeebe environment.
-- **Worker  Testing**: Validate the glue code that interacts with your workflows.
-- **Reusable Setup**: Designed to be used as a dependency in other modules to simplify testing workflows.
+- **TestProcessEngineConfiguration**: Spring test configuration that ensures `ProcessEngineApi` uses the test `CamundaClient` provided by `@CamundaSpringProcessTest`
 
-## 📌 How to Use
+## 🔧 How to Use
 
-To streamline process testing, include **common-zeebe-test** as a dependency in any service that contains BPMN processes (such as **example-service**). This setup ensures smooth and efficient testing of both workflows and worker code.
+Include **common-zeebe-test** as a test dependency and import the test configuration:
 
-### Example (Gradle Setup):
-
-```gradle
+```kotlin
+// In build.gradle.kts
 dependencies {
-    testImplementation(project(":common-zeebe-test"))
+    testImplementation(project(":services:common-zeebe-test"))
+}
+```
+
+```kotlin
+// In your test class
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@CamundaSpringProcessTest
+@Import(TestProcessEngineConfiguration::class)
+class YourProcessTest {
+    // Your tests here
 }
 ```

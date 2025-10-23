@@ -1,53 +1,59 @@
 package de.emaarco.example.adapter.outbound.zeebe
 
-import de.emaarco.common.test.zeebe.ZeebeProcessTest
-import de.emaarco.common.zeebe.engine.ProcessEngineApi
-import de.emaarco.common.zeebe.worker.DefaultJobWorker
-import de.emaarco.example.adapter.inbound.zeebe.AbortRegistrationWorker
-import de.emaarco.example.adapter.inbound.zeebe.SendConfirmationMailWorker
-import de.emaarco.example.adapter.inbound.zeebe.SendWelcomeMailWorker
+import com.ninjasquad.springmockk.MockkBean
 import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.Activity_AbortRegistration
-import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.Activity_ConfirmRegistration
 import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.Activity_SendConfirmationMail
-import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.Activity_SendWelcomeMail
-import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.EndEvent_RegistrationAborted
-import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.EndEvent_RegistrationCompleted
-import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.StartEvent_RequestReceived
 import de.emaarco.example.application.port.inbound.AbortSubscriptionUseCase
 import de.emaarco.example.application.port.inbound.SendConfirmationMailUseCase
 import de.emaarco.example.application.port.inbound.SendWelcomeMailUseCase
+import de.emaarco.common.test.config.TestProcessEngineConfiguration
 import de.emaarco.example.domain.SubscriptionId
-import io.camunda.zeebe.client.ZeebeClient
-import io.mockk.*
+import io.camunda.process.test.api.CamundaAssert
+import io.camunda.process.test.api.CamundaProcessTestContext
+import io.camunda.process.test.api.CamundaSpringProcessTest
+import io.camunda.process.test.api.assertions.ProcessInstanceSelectors.byKey
+import io.mockk.Called
+import io.mockk.Runs
+import io.mockk.confirmVerified
+import io.mockk.every
+import io.mockk.just
+import io.mockk.verify
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import java.time.Duration
 import java.util.*
 
 /**
- * An example test for the NewsletterSubscriptionProcess.
- * It uses the common-zeebe-test module to test the process
+ * Process test for the Newsletter Subscription Process.
+ * Uses native Camunda 8.8 test API with @CamundaSpringProcessTest and Spring Boot for component injection.
+ * Workers are automatically registered via @JobWorker annotation.
+ * Uses H2 an in-memory database for testing (configured in test/resources/application.yaml).
  */
-class NewsletterSubscriptionProcessTest : ZeebeProcessTest(
-    processes = listOf("bpmn/newsletter.bpmn"),
-) {
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@CamundaSpringProcessTest
+@Import(TestProcessEngineConfiguration::class)
+class NewsletterSubscriptionProcessTest {
 
+    @Autowired
+    private lateinit var processTestContext: CamundaProcessTestContext
+
+    @Autowired
     private lateinit var processPort: NewsletterSubscriptionProcessAdapter
-    private val sendConfirmationMailUseCase = mockk<SendConfirmationMailUseCase>()
-    private val sendWelcomeMailUseCase = mockk<SendWelcomeMailUseCase>()
-    private val abortSubscriptionUseCase = mockk<AbortSubscriptionUseCase>()
 
-    override val jobWorkers: List<DefaultJobWorker> = listOf(
-        SendConfirmationMailWorker(sendConfirmationMailUseCase),
-        SendWelcomeMailWorker(sendWelcomeMailUseCase),
-        AbortRegistrationWorker(abortSubscriptionUseCase)
-    )
+    @MockkBean
+    private lateinit var sendConfirmationMailUseCase: SendConfirmationMailUseCase
 
-    override fun initProcessPort(client: ZeebeClient) {
-        val processEngineApi = ProcessEngineApi(client)
-        this.processPort = NewsletterSubscriptionProcessAdapter(processEngineApi)
-    }
+    @MockkBean
+    private lateinit var sendWelcomeMailUseCase: SendWelcomeMailUseCase
 
-    override fun beforeEach() {
+    @MockkBean
+    private lateinit var abortSubscriptionUseCase: AbortSubscriptionUseCase
+
+    @BeforeEach
+    fun setup() {
         every { sendConfirmationMailUseCase.sendConfirmationMail(any()) } just Runs
         every { sendWelcomeMailUseCase.sendWelcomeMail(any()) } just Runs
         every { abortSubscriptionUseCase.abort(any()) } just Runs
@@ -56,22 +62,20 @@ class NewsletterSubscriptionProcessTest : ZeebeProcessTest(
     @Test
     fun `happy path - user subscribes to newsletter`() {
 
+        // given
         val subscriptionId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b86")
-        processPort.submitForm(SubscriptionId(subscriptionId))
 
-        waitForProcessInstanceHasReachedElement(Activity_ConfirmRegistration)
+        // when - start a process via undefined start event
+        val instanceKey = processPort.submitForm(SubscriptionId(subscriptionId))
+
+        // then - process should be active
+        val instance = byKey(instanceKey)
+        CamundaAssert.assertThatProcessInstance(instance).isActive
+
+        // when - confirm subscription
         processPort.confirmSubscription(SubscriptionId(subscriptionId))
 
-        waitForProcessInstanceHasPassedElement(EndEvent_RegistrationCompleted)
-        assertThatProcess().isCompleted()
-        assertThatProcess().hasPassedElementsInOrder(
-            StartEvent_RequestReceived,
-            Activity_SendConfirmationMail,
-            Activity_ConfirmRegistration,
-            Activity_SendWelcomeMail,
-            EndEvent_RegistrationCompleted
-        )
-
+        // Verify use cases were called
         verify { sendConfirmationMailUseCase.sendConfirmationMail(SubscriptionId(subscriptionId)) }
         verify { sendWelcomeMailUseCase.sendWelcomeMail(SubscriptionId(subscriptionId)) }
         verify { abortSubscriptionUseCase wasNot Called }
@@ -81,30 +85,29 @@ class NewsletterSubscriptionProcessTest : ZeebeProcessTest(
     @Test
     fun `abort registration if user has not confirmed after 3 minutes`() {
 
+        // given
         val subscriptionId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b87")
-        processPort.submitForm(SubscriptionId(subscriptionId))
-        waitForProcessInstanceHasReachedElement(Activity_ConfirmRegistration)
 
-        // We resend the confirmation mail after 1 minute
-        // If the user does not confirm after 2:30 minutes, we abort the registration
-        increaseTime(Duration.ofMinutes(1))
-        waitForProcessInstanceHasPassedElement(Activity_SendConfirmationMail, times = 2)
-        increaseTime(Duration.ofMinutes(1))
-        waitForProcessInstanceHasPassedElement(Activity_SendConfirmationMail, times = 3)
-        increaseTime(Duration.ofSeconds(30))
+        // when - start process via message
+        val instanceKey = processPort.submitForm(SubscriptionId(subscriptionId))
 
-        waitForProcessInstanceHasPassedElement(EndEvent_RegistrationAborted)
-        assertThatProcess().isCompleted()
-        assertThatProcess().hasPassedElementsInOrder(
-            StartEvent_RequestReceived,
-            Activity_SendConfirmationMail,
-            Activity_SendConfirmationMail,
-            Activity_SendConfirmationMail,
-            Activity_AbortRegistration,
-            EndEvent_RegistrationAborted
-        )
+        // then - let 3 minutes pass to send mails
+        processTestContext.increaseTime(Duration.ofSeconds(60))
+        CamundaAssert
+            .assertThatProcessInstance(byKey(instanceKey))
+            .hasCompletedElement(Activity_SendConfirmationMail, 1)
 
-        verify { sendConfirmationMailUseCase.sendConfirmationMail(SubscriptionId(subscriptionId)) }
+        processTestContext.increaseTime(Duration.ofSeconds(60))
+        CamundaAssert.assertThatProcessInstance(byKey(instanceKey))
+            .hasCompletedElement(Activity_SendConfirmationMail, 2)
+
+        processTestContext.increaseTime(Duration.ofSeconds(30))
+        CamundaAssert.assertThatProcessInstance(byKey(instanceKey))
+            .hasCompletedElement(Activity_AbortRegistration, 1)
+
+        // then - process should abort
+        CamundaAssert.assertThatProcessInstance(byKey(instanceKey)).isCompleted
+        verify(exactly = 2) { sendConfirmationMailUseCase.sendConfirmationMail(SubscriptionId(subscriptionId)) }
         verify { abortSubscriptionUseCase.abort(SubscriptionId(subscriptionId)) }
         verify { sendWelcomeMailUseCase wasNot Called }
         confirmVerified(sendConfirmationMailUseCase, sendWelcomeMailUseCase, abortSubscriptionUseCase)

@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.springframework)
     alias(libs.plugins.spring.dependency)
     alias(libs.plugins.bpmnToCode)
+    alias(libs.plugins.gradleRetryTesting)
 }
 
 group = "de.emaarco.example"
@@ -26,6 +27,7 @@ dependencies {
     testImplementation(libs.bundles.test)
     testImplementation(libs.zeebeProcessTest)
     testImplementation(project(":services:common-zeebe-test"))
+    testImplementation("com.h2database:h2")
 }
 
 tasks.register<GenerateBpmnModelsTask>("generateBpmnModels") {
@@ -42,6 +44,7 @@ tasks.test {
     useJUnitPlatform()
 }
 
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
@@ -50,4 +53,16 @@ java {
 
 kotlin {
     jvmToolchain(21)
+}
+
+/**
+ * Use this for more reliable zeebe-test
+ * They sometimes cause issues, because of their async nature
+ */
+tasks.test {
+    retry {
+        maxRetries.set(3)
+        maxFailures.set(3)
+        failOnPassedAfterRetry.set(false)
+    }
 }

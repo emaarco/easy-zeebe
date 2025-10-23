@@ -18,18 +18,16 @@ and interact with the Zeebe engine running in your stack.
 
 You might notice we're not using Zeebe's native **`@JobWorker`** Spring annotation. Here's why:
 
-This example-service relies on the plain `zeebe-process-test` framework for testing, 
-as it's (in my opinion) the only library offering sufficient functionality for **Zeebe 8.6**.
-However, this framework does **not** support Spring-based tests, 
-which is why we manage worker registration manually with our own worker classes.
+This example-service uses **[`camunda-process-test-spring`](https://github.com/camunda/camunda/tree/main/testing/camunda-process-test-spring)**
+for process testing with Camunda 8.8. This approach allows us to test processes with actual worker implementations
+instead of mocking them, which is why we manage worker registration manually with our own worker classes.
 
-### Why are we using plain zeebe-process-test?
+### Testing Approach
 
-- **[`spring-boot-starter-camunda-test`](https://mvnrepository.com/artifact/io.camunda.spring/spring-boot-starter-camunda-test)** is no longer supported for 8.6.
-- **[`camunda-process-test-spring`](https://github.com/camunda/camunda/tree/main/testing/camunda-process-test-spring)** aims to replace both `spring-boot-starter-camunda-test` and `zeebe-process-test` in the future, but it's currently in **alpha** and has a limited feature set.
-
-We might revert to Spring-based testing once future versions provide better support. 
-**Stay tuned for updates!** 🚀
+- Tests use the `@CamundaProcessTest` annotation which provides an in-memory process engine
+- Workers are registered manually in tests using the injected `CamundaClient`
+- This allows testing with real worker logic without needing to mock the worker behavior
+- The `CamundaProcessTestContext` provides utilities for timer manipulation and process control
 
 ## 📌 How to Use
 
