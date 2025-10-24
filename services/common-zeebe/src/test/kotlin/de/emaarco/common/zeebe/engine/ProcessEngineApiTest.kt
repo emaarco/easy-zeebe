@@ -2,6 +2,7 @@ package de.emaarco.common.zeebe.engine
 
 import io.camunda.client.CamundaClient
 import io.camunda.client.api.response.ProcessInstanceEvent
+import io.camunda.operate.CamundaOperateClient
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
