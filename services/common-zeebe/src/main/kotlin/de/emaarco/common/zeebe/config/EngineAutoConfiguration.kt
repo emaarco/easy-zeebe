@@ -13,6 +13,10 @@ import org.springframework.context.annotation.Import
 class EngineAutoConfiguration {
 
     @Bean
-    fun processEngineApi(camundaClient: CamundaClient) = ProcessEngineApi(camundaClient)
+    fun processEngineApi(
+        camundaClient: CamundaClient,
+    ) = ProcessEngineApi(
+        camundaClient = camundaClient
+    )
 
 }
