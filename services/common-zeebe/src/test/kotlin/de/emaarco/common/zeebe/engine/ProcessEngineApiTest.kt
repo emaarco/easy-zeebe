@@ -14,7 +14,6 @@ import java.time.temporal.ChronoUnit
 class ProcessEngineApiTest {
 
     private val camundaClient = mockk<CamundaClient>(relaxed = true)
-    private val operateClient = mockk<CamundaOperateClient>(relaxed = true)
     private val underTest = ProcessEngineApi(camundaClient)
 
     @Test
