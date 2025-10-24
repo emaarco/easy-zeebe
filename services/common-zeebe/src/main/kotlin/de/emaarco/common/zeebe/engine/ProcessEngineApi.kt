@@ -1,6 +1,9 @@
 package de.emaarco.common.zeebe.engine
 
+import de.emaarco.common.zeebe.context.EventualConsistent
+import de.emaarco.common.zeebe.context.StronglyConsistent
 import io.camunda.client.CamundaClient
+import io.camunda.client.api.search.response.ProcessInstance
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 
@@ -14,6 +17,7 @@ open class ProcessEngineApi(
      * @param variables the variables that should be passed to the process
      * @return the key of the process instance
      */
+    @StronglyConsistent
     open fun startProcess(
         processId: String,
         variables: Map<String, Any> = emptyMap(),
@@ -33,6 +37,7 @@ open class ProcessEngineApi(
      * @param correlationId an id that is used to identify the process instance
      * @param variables the variables that should be passed to the process
      */
+    @StronglyConsistent
     open fun sendMessage(
         messageName: String,
         correlationId: String,
@@ -46,4 +51,16 @@ open class ProcessEngineApi(
             .send()
             .join()
     }
+
+    /**
+     * Use this method to search for process instances.
+     * For usage in production I would recommend using filtering.
+     * @return a list of all process instances
+     */
+    @EventualConsistent
+    open fun searchForProcessInstances(): List<ProcessInstance> {
+        val instances = camundaClient.newProcessInstanceSearchRequest().send().join()
+        return instances.items()
+    }
+
 }

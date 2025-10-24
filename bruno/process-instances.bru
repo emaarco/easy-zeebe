@@ -1,0 +1,16 @@
+meta {
+  name: Process Instances
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://localhost:8081/api/process-instances
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
