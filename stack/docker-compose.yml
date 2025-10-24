@@ -8,7 +8,7 @@ services:
       - 5432:5432
     restart: always
     environment:
-      POSTGRES_DB: example_database
+      POSTGRES_DB: easy-zeebe
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
 
