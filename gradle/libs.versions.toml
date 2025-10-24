@@ -17,7 +17,6 @@ devtools = { module = "org.springframework.boot:spring-boot-devtools", version.r
 jpa = { module = 'org.springframework.boot:spring-boot-starter-data-jpa', version.ref = 'spring_version' }
 postgres = { module = 'org.postgresql:postgresql', version.ref = 'postgres_version' }
 zeebeSdk = { module = "io.camunda:camunda-spring-boot-starter", version.ref = "zeebe_version" }
-operateClient = { module = "io.camunda.spring:java-client-operate", version = "8.7.1" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin_version" }
 kotlin_logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin_logging_version" }
 kotlin_jackson = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "kotlin_jackson" }
