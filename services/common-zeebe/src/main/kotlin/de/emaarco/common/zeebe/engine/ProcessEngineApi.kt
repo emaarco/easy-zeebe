@@ -1,6 +1,8 @@
 package de.emaarco.common.zeebe.engine
 
 import io.camunda.client.CamundaClient
+import io.camunda.client.api.ExperimentalApi
+import io.camunda.client.api.search.response.ProcessInstance
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 
@@ -45,5 +47,14 @@ open class ProcessEngineApi(
             .timeToLive(Duration.of(10, ChronoUnit.SECONDS))
             .send()
             .join()
+    }
+
+    /**
+     * Use this method to search for process instances
+     * @return a list of process instances
+     */
+    @ExperimentalApi("Stil in alpha in zeebe 8.8")
+    open fun searchProcessInstances(): List<ProcessInstance> {
+        TODO("Not yet implemented")
     }
 }

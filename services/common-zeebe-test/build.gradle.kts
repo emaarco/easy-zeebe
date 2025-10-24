@@ -15,6 +15,7 @@ repositories {
 dependencies {
     implementation(project(":services:common-zeebe"))
     implementation(libs.zeebeSdk)
+    implementation(libs.operateClient)
     implementation(libs.zeebeProcessTest)
 }
 

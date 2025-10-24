@@ -2,6 +2,7 @@ package de.emaarco.common.zeebe.engine
 
 import io.camunda.client.CamundaClient
 import io.camunda.client.api.response.ProcessInstanceEvent
+import io.camunda.operate.CamundaOperateClient
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -13,6 +14,7 @@ import java.time.temporal.ChronoUnit
 class ProcessEngineApiTest {
 
     private val camundaClient = mockk<CamundaClient>(relaxed = true)
+    private val operateClient = mockk<CamundaOperateClient>(relaxed = true)
     private val underTest = ProcessEngineApi(camundaClient)
 
     @Test

@@ -14,6 +14,7 @@ repositories {
 
 dependencies {
     implementation(libs.zeebeSdk)
+    implementation(libs.operateClient)
     implementation(libs.kotlin.logging)
     testImplementation(libs.bundles.test)
 }
