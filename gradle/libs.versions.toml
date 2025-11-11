@@ -41,5 +41,5 @@ kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin_ver
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin_version" }
 springframework = { id = "org.springframework.boot", version.ref = "spring_version" }
 spring-dependency = { id = "io.spring.dependency-management", version.ref = "spring_dependency_version" }
-bpmnToCode = { id = "io.github.emaarco.bpmn-to-code-gradle", version = "0.0.11" }
+bpmnToCode = { id = "io.github.emaarco.bpmn-to-code-gradle", version = "0.0.12" }
 gradleRetryTesting = { id = "org.gradle.test-retry", version = "1.6.4" }

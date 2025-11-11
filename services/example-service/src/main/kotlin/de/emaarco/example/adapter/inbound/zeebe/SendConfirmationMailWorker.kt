@@ -1,5 +1,6 @@
 package de.emaarco.example.adapter.inbound.zeebe
 
+import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.TaskTypes
 import de.emaarco.example.application.port.inbound.SendConfirmationMailUseCase
 import de.emaarco.example.domain.SubscriptionId
 import io.camunda.client.annotation.JobWorker
@@ -15,7 +16,7 @@ class SendConfirmationMailWorker(
 
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = "newsletter.sendConfirmationMail")
+    @JobWorker(type = TaskTypes.Activity_SendConfirmationMail)
     fun handle(@Variable subscriptionId: UUID) {
         log.debug { "Received job to send confirmation mail for subscriptionId: $subscriptionId" }
         useCase.sendConfirmationMail(SubscriptionId(subscriptionId))
