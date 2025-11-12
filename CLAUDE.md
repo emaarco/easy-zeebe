@@ -146,3 +146,16 @@ npm run type-check
 - `services/common-zeebe/src/main/kotlin/de/emaarco/common/zeebe/engine/ProcessEngineApi.kt`: Core Zeebe API
 - `frontend/src/App.tsx`: Main React frontend component with newsletter subscription form
 - `frontend/src/services/api.ts`: API client for backend communication
+
+## Working with GitHub
+Use the `gh` CLI for GitHub operations:
+```bash
+# View repository info
+gh repo view owner/repo
+
+# Fetch file contents from GitHub
+gh api repos/owner/repo/contents/path/to/file --jq '.content' | base64 -d
+
+# List repository contents
+gh api repos/owner/repo/contents/directory
+```
