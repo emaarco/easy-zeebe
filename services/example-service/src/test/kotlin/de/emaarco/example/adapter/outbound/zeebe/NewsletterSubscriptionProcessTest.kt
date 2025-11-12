@@ -1,12 +1,12 @@
 package de.emaarco.example.adapter.outbound.zeebe
 
 import com.ninjasquad.springmockk.MockkBean
+import de.emaarco.common.test.config.TestProcessEngineConfiguration
 import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.Activity_AbortRegistration
 import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.Activity_SendConfirmationMail
 import de.emaarco.example.application.port.inbound.AbortSubscriptionUseCase
 import de.emaarco.example.application.port.inbound.SendConfirmationMailUseCase
 import de.emaarco.example.application.port.inbound.SendWelcomeMailUseCase
-import de.emaarco.common.test.config.TestProcessEngineConfiguration
 import de.emaarco.example.domain.SubscriptionId
 import io.camunda.process.test.api.CamundaAssert
 import io.camunda.process.test.api.CamundaProcessTestContext
@@ -70,12 +70,13 @@ class NewsletterSubscriptionProcessTest {
 
         // then - process should be active
         val instance = byKey(instanceKey)
-        CamundaAssert.assertThatProcessInstance(instance).isActive
+        CamundaAssert.assertThatProcessInstance(instance).isActive()
 
         // when - confirm subscription
         processPort.confirmSubscription(SubscriptionId(subscriptionId))
 
         // Verify use cases were called
+        CamundaAssert.assertThatProcessInstance(instance).isCompleted()
         verify { sendConfirmationMailUseCase.sendConfirmationMail(SubscriptionId(subscriptionId)) }
         verify { sendWelcomeMailUseCase.sendWelcomeMail(SubscriptionId(subscriptionId)) }
         verify { abortSubscriptionUseCase wasNot Called }
