@@ -21,7 +21,7 @@ class NewsletterSubscriptionProcessAdapter(
 
     override fun confirmSubscription(id: SubscriptionId) {
         engineApi.sendMessage(
-            messageName = NewsletterSubscriptionProcessApi.Messages.Message_SubscriptionConfirmed,
+            messageName = NewsletterSubscriptionProcessApi.Messages.MESSAGE_SUBSCRIPTION_CONFIRMED,
             correlationId = id.value.toString(),
         )
     }

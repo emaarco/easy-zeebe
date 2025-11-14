@@ -16,7 +16,7 @@ class SendWelcomeMailWorker(
 
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = TaskTypes.Activity_SendWelcomeMail)
+    @JobWorker(type = TaskTypes.ACTIVITY_SEND_WELCOME_MAIL)
     fun handle(@Variable subscriptionId: UUID) {
         log.debug { "Received job to send welcome mail for subscriptionId: $subscriptionId" }
         useCase.sendWelcomeMail(SubscriptionId(subscriptionId))

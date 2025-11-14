@@ -2,8 +2,8 @@ package de.emaarco.example.adapter.outbound.zeebe
 
 import com.ninjasquad.springmockk.MockkBean
 import de.emaarco.common.test.config.TestProcessEngineConfiguration
-import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.Activity_AbortRegistration
-import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.Activity_SendConfirmationMail
+import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.ACTIVITY_ABORT_REGISTRATION
+import de.emaarco.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.ACTIVITY_SEND_CONFIRMATION_MAIL
 import de.emaarco.example.application.port.inbound.AbortSubscriptionUseCase
 import de.emaarco.example.application.port.inbound.SendConfirmationMailUseCase
 import de.emaarco.example.application.port.inbound.SendWelcomeMailUseCase
@@ -96,15 +96,15 @@ class NewsletterSubscriptionProcessTest {
         processTestContext.increaseTime(Duration.ofSeconds(60))
         CamundaAssert
             .assertThatProcessInstance(byKey(instanceKey))
-            .hasCompletedElement(Activity_SendConfirmationMail, 1)
+            .hasCompletedElement(ACTIVITY_SEND_CONFIRMATION_MAIL, 1)
 
         processTestContext.increaseTime(Duration.ofSeconds(60))
         CamundaAssert.assertThatProcessInstance(byKey(instanceKey))
-            .hasCompletedElement(Activity_SendConfirmationMail, 2)
+            .hasCompletedElement(ACTIVITY_SEND_CONFIRMATION_MAIL, 2)
 
         processTestContext.increaseTime(Duration.ofSeconds(30))
         CamundaAssert.assertThatProcessInstance(byKey(instanceKey))
-            .hasCompletedElement(Activity_AbortRegistration, 1)
+            .hasCompletedElement(ACTIVITY_ABORT_REGISTRATION, 1)
 
         // then - process should abort
         CamundaAssert.assertThatProcessInstance(byKey(instanceKey)).isCompleted
