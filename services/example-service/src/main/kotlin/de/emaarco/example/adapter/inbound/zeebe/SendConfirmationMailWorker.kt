@@ -16,7 +16,7 @@ class SendConfirmationMailWorker(
 
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = TaskTypes.ACTIVITY_SEND_CONFIRMATION_MAIL)
+    @JobWorker(type = TaskTypes.NEWSLETTER_SEND_CONFIRMATION_MAIL)
     fun handle(@Variable subscriptionId: UUID) {
         log.debug { "Received job to send confirmation mail for subscriptionId: $subscriptionId" }
         useCase.sendConfirmationMail(SubscriptionId(subscriptionId))
