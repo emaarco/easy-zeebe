@@ -30,7 +30,7 @@ dependencies {
     testImplementation("com.h2database:h2")
 }
 
-tasks.register<GenerateBpmnModelsTask>("generateBpmnModels") {
+tasks.named<GenerateBpmnModelsTask>("generateBpmnModelApi") {
     baseDir = projectDir.toString()
     filePattern = "src/main/resources/bpmn/*.bpmn"
     outputFolderPath = "$projectDir/src/main/kotlin"

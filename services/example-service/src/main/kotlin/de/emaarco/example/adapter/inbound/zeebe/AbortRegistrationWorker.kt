@@ -16,7 +16,7 @@ class AbortRegistrationWorker(
 
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = TaskTypes.ACTIVITY_ABORT_REGISTRATION)
+    @JobWorker(type = TaskTypes.NEWSLETTER_ABORT_REGISTRATION)
     fun handle(@Variable subscriptionId: UUID) {
         log.debug { "Received job to abort registration for subscriptionId: $subscriptionId" }
         useCase.abort(SubscriptionId(subscriptionId))
