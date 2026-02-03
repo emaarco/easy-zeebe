@@ -1,8 +1,8 @@
 [versions]
-spring_version = "4.0.2"
+spring_version = "3.5.7"
 spring_dependency_version = "1.1.7"
 mockk_version = "1.14.9"
-spring_mockk_version = "5.0.1"
+spring_mockk_version = "4.0.2"
 kotlin_version = "2.3.0"
 kotlin_logging_version = "3.0.5"
 kotlin_jackson = "2.20.1"
