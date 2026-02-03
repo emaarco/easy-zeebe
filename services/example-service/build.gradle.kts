@@ -13,7 +13,7 @@ plugins {
     alias(libs.plugins.gradleRetryTesting)
 }
 
-group = "de.emaarco.example"
+group = "io.miragon.example"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -34,7 +34,7 @@ tasks.named<GenerateBpmnModelsTask>("generateBpmnModelApi") {
     baseDir = projectDir.toString()
     filePattern = "src/main/resources/bpmn/*.bpmn"
     outputFolderPath = "$projectDir/src/main/kotlin"
-    packagePath = "de.emaarco.example.adapter.process"
+    packagePath = "io.miragon.example.adapter.process"
     outputLanguage = OutputLanguage.KOTLIN
     processEngine = ProcessEngine.ZEEBE
     useVersioning = false

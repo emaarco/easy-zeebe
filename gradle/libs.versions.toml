@@ -19,7 +19,6 @@ postgres = { module = 'org.postgresql:postgresql', version.ref = 'postgres_versi
 zeebeSdk = { module = "io.camunda:camunda-spring-boot-starter", version.ref = "zeebe_version" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin_version" }
 kotlin_logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin_logging_version" }
-kotlin_jackson = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "kotlin_jackson" }
 
 # testing
 zeebeProcessTest = { module = "io.camunda:camunda-process-test-spring", version.ref = "zeebe_version" }
