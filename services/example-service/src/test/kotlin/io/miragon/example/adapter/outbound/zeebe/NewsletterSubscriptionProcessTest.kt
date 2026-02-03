@@ -60,22 +60,17 @@ class NewsletterSubscriptionProcessTest {
     }
 
     @Test
-    fun `happy path - user subscribes to newsletter`() {
+    fun `happy path - user confirms subscription immediately and receives welcome mail`() {
 
         // given
         val subscriptionId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b86")
 
-        // when - start a process via undefined start event
+        // when - start process and immediately confirm subscription
         val instanceKey = processPort.submitForm(SubscriptionId(subscriptionId))
-
-        // then - process should be active
-        val instance = byKey(instanceKey)
-        CamundaAssert.assertThatProcessInstance(instance).isActive()
-
-        // when - confirm subscription
         processPort.confirmSubscription(SubscriptionId(subscriptionId))
 
-        // Verify use cases were called
+        // then - process should complete successfully with welcome mail sent
+        val instance = byKey(instanceKey)
         CamundaAssert.assertThatProcessInstance(instance).isCompleted()
         verify { sendConfirmationMailUseCase.sendConfirmationMail(SubscriptionId(subscriptionId)) }
         verify { sendWelcomeMailUseCase.sendWelcomeMail(SubscriptionId(subscriptionId)) }
@@ -84,29 +79,40 @@ class NewsletterSubscriptionProcessTest {
     }
 
     @Test
-    fun `abort registration if user has not confirmed after 3 minutes`() {
+    fun `user confirms subscription after receiving reminder mail`() {
 
-        // given
+        // given - process is started
         val subscriptionId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b87")
-
-        // when - start process via message
         val instanceKey = processPort.submitForm(SubscriptionId(subscriptionId))
 
-        // then - let 3 minutes pass to send mails
-        processTestContext.increaseTime(Duration.ofSeconds(60))
-        CamundaAssert
-            .assertThatProcessInstance(byKey(instanceKey))
-            .hasCompletedElement(ACTIVITY_SEND_CONFIRMATION_MAIL, 1)
-
+        // when - time passes and reminder is sent, then user confirms
         processTestContext.increaseTime(Duration.ofSeconds(60))
         CamundaAssert.assertThatProcessInstance(byKey(instanceKey))
             .hasCompletedElement(ACTIVITY_SEND_CONFIRMATION_MAIL, 2)
 
-        processTestContext.increaseTime(Duration.ofSeconds(30))
+        processPort.confirmSubscription(SubscriptionId(subscriptionId))
+
+        // then - process completes successfully
+        CamundaAssert.assertThatProcessInstance(byKey(instanceKey)).isCompleted()
+        verify(exactly = 2) { sendConfirmationMailUseCase.sendConfirmationMail(SubscriptionId(subscriptionId)) }
+        verify { sendWelcomeMailUseCase.sendWelcomeMail(SubscriptionId(subscriptionId)) }
+        verify { abortSubscriptionUseCase wasNot Called }
+        confirmVerified(sendConfirmationMailUseCase, sendWelcomeMailUseCase, abortSubscriptionUseCase)
+    }
+
+    @Test
+    fun `subscription is aborted when user does not confirm within timeout`() {
+
+        // given - process is started
+        val subscriptionId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b88")
+        val instanceKey = processPort.submitForm(SubscriptionId(subscriptionId))
+
+        // when - timeout period (2.5 minutes) passes without confirmation
+        processTestContext.increaseTime(Duration.ofSeconds(150))
+
+        // then - subscription is aborted
         CamundaAssert.assertThatProcessInstance(byKey(instanceKey))
             .hasCompletedElement(ACTIVITY_ABORT_REGISTRATION, 1)
-
-        // then - process should abort
         CamundaAssert.assertThatProcessInstance(byKey(instanceKey)).isCompleted
         verify(exactly = 2) { sendConfirmationMailUseCase.sendConfirmationMail(SubscriptionId(subscriptionId)) }
         verify { abortSubscriptionUseCase.abort(SubscriptionId(subscriptionId)) }
