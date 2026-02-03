@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.spring.dependency)
 }
 
-group = "de.emaarco.example"
+group = "io.miragon.example"
 version = "1.0-SNAPSHOT"
 
 repositories {

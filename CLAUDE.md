@@ -142,8 +142,8 @@ npm run type-check
 
 ## Key Files
 - `services/example-service/src/main/resources/bpmn/newsletter.bpmn`: Main process definition
-- `services/example-service/src/main/kotlin/de/emaarco/example/ExampleApplication.kt`: Application entry point
-- `services/common-zeebe/src/main/kotlin/de/emaarco/common/zeebe/engine/ProcessEngineApi.kt`: Core Zeebe API
+- `services/example-service/src/main/kotlin/io/miragon/example/ExampleApplication.kt`: Application entry point
+- `services/common-zeebe/src/main/kotlin/io/miragon/common/zeebe/engine/ProcessEngineApi.kt`: Core Zeebe API
 - `frontend/src/App.tsx`: Main React frontend component with newsletter subscription form
 - `frontend/src/services/api.ts`: API client for backend communication
 
