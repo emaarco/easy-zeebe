@@ -1,17 +1,22 @@
 package io.miragon.example.adapter.outbound.zeebe
 
 import com.ninjasquad.springmockk.MockkBean
-import io.miragon.common.test.config.TestProcessEngineConfiguration
-import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.ACTIVITY_ABORT_REGISTRATION
-import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.ACTIVITY_SEND_CONFIRMATION_MAIL
-import io.miragon.example.application.port.inbound.AbortSubscriptionUseCase
-import io.miragon.example.application.port.inbound.SendConfirmationMailUseCase
-import io.miragon.example.application.port.inbound.SendWelcomeMailUseCase
-import io.miragon.example.domain.SubscriptionId
+import io.camunda.client.CamundaClient
+import io.camunda.client.api.response.ProcessInstanceEvent
 import io.camunda.process.test.api.CamundaAssert
 import io.camunda.process.test.api.CamundaProcessTestContext
 import io.camunda.process.test.api.CamundaSpringProcessTest
 import io.camunda.process.test.api.assertions.ProcessInstanceSelectors.byKey
+import io.miragon.common.test.config.TestProcessEngineConfiguration
+import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi
+import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.ACTIVITY_ABORT_REGISTRATION
+import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.ACTIVITY_CONFIRM_REGISTRATION
+import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi.Elements.ACTIVITY_SEND_CONFIRMATION_MAIL
+import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi.Variables.SUBSCRIPTION_ID
+import io.miragon.example.application.port.inbound.AbortSubscriptionUseCase
+import io.miragon.example.application.port.inbound.SendConfirmationMailUseCase
+import io.miragon.example.application.port.inbound.SendWelcomeMailUseCase
+import io.miragon.example.domain.SubscriptionId
 import io.mockk.Called
 import io.mockk.Runs
 import io.mockk.confirmVerified
@@ -36,6 +41,9 @@ import java.util.*
 @CamundaSpringProcessTest
 @Import(TestProcessEngineConfiguration::class)
 class NewsletterSubscriptionProcessTest {
+
+    @Autowired
+    private lateinit var camundaClient: CamundaClient
 
     @Autowired
     private lateinit var processTestContext: CamundaProcessTestContext
@@ -83,17 +91,20 @@ class NewsletterSubscriptionProcessTest {
 
         // given - process is started
         val subscriptionId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b87")
-        val instanceKey = processPort.submitForm(SubscriptionId(subscriptionId))
+        val instance = startProcessAt(
+            elementId = ACTIVITY_SEND_CONFIRMATION_MAIL,
+            subscriptionId = SubscriptionId(subscriptionId)
+        )
 
-        // when - time passes and reminder is sent, then user confirms
+        // when - time passes, and reminder is sent; then the user confirms
+        CamundaAssert.assertThat(instance).hasCompletedElement(ACTIVITY_SEND_CONFIRMATION_MAIL, 1)
         processTestContext.increaseTime(Duration.ofSeconds(60))
-        CamundaAssert.assertThatProcessInstance(byKey(instanceKey))
-            .hasCompletedElement(ACTIVITY_SEND_CONFIRMATION_MAIL, 2)
+        CamundaAssert.assertThatProcessInstance(instance).hasCompletedElement(ACTIVITY_SEND_CONFIRMATION_MAIL, 2)
 
         processPort.confirmSubscription(SubscriptionId(subscriptionId))
 
         // then - process completes successfully
-        CamundaAssert.assertThatProcessInstance(byKey(instanceKey)).isCompleted()
+        CamundaAssert.assertThatProcessInstance(instance).isCompleted()
         verify(exactly = 2) { sendConfirmationMailUseCase.sendConfirmationMail(SubscriptionId(subscriptionId)) }
         verify { sendWelcomeMailUseCase.sendWelcomeMail(SubscriptionId(subscriptionId)) }
         verify { abortSubscriptionUseCase wasNot Called }
@@ -105,18 +116,34 @@ class NewsletterSubscriptionProcessTest {
 
         // given - process is started
         val subscriptionId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b88")
-        val instanceKey = processPort.submitForm(SubscriptionId(subscriptionId))
+        val instance = startProcessAt(
+            elementId = ACTIVITY_CONFIRM_REGISTRATION,
+            subscriptionId = SubscriptionId(subscriptionId)
+        )
 
         // when - timeout period (2.5 minutes) passes without confirmation
         processTestContext.increaseTime(Duration.ofSeconds(150))
 
         // then - subscription is aborted
-        CamundaAssert.assertThatProcessInstance(byKey(instanceKey))
-            .hasCompletedElement(ACTIVITY_ABORT_REGISTRATION, 1)
-        CamundaAssert.assertThatProcessInstance(byKey(instanceKey)).isCompleted
-        verify(exactly = 2) { sendConfirmationMailUseCase.sendConfirmationMail(SubscriptionId(subscriptionId)) }
+        CamundaAssert.assertThatProcessInstance(instance).hasCompletedElement(ACTIVITY_ABORT_REGISTRATION, 1)
+        CamundaAssert.assertThatProcessInstance(instance).isCompleted
+
         verify { abortSubscriptionUseCase.abort(SubscriptionId(subscriptionId)) }
         verify { sendWelcomeMailUseCase wasNot Called }
         confirmVerified(sendConfirmationMailUseCase, sendWelcomeMailUseCase, abortSubscriptionUseCase)
+    }
+
+    private fun startProcessAt(
+        elementId: String,
+        subscriptionId: SubscriptionId
+    ): ProcessInstanceEvent {
+        val variables = mapOf(SUBSCRIPTION_ID to subscriptionId.value.toString())
+        return camundaClient.newCreateInstanceCommand()
+            .bpmnProcessId(NewsletterSubscriptionProcessApi.PROCESS_ID)
+            .latestVersion()
+            .variables(variables)
+            .startBeforeElement(elementId)
+            .send()
+            .join()
     }
 }
