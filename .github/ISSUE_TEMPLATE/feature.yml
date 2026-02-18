@@ -1,0 +1,56 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for easy-zeebe
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please describe what you'd like to see and why it would be useful.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear and concise description of the feature you are requesting.
+      placeholder: As a developer, I want to automatically generate Zeebe job workers from BPMN so that I can reduce boilerplate code...
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is this feature needed? What problem does it solve?
+      placeholder: Currently, adding a new service task to the BPMN requires manually creating the worker, port interface, and service — this is tedious and error-prone.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How should the feature work? Include any Zeebe/process-specific details.
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: What conditions must be met for this feature to be considered complete?
+      placeholder: |
+        - [ ] Running `/automate-process` generates worker stubs for all service tasks in the BPMN
+        - [ ] Generated workers use ProcessApi constants instead of raw strings
+        - [ ] Existing files are not overwritten
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or features you've considered?
+    validations:
+      required: false

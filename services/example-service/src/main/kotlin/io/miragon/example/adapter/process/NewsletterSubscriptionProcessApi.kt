@@ -12,36 +12,35 @@ object NewsletterSubscriptionProcessApi {
   const val PROCESS_ENGINE: String = "ZEEBE"
 
   object Elements {
-    const val ACTIVITY_ABORT_REGISTRATION: String = "Activity_AbortRegistration"
+    const val END_EVENT_REGISTRATION_ABORTED: String = "endEvent_RegistrationAborted"
 
-    const val ACTIVITY_CONFIRM_REGISTRATION: String = "Activity_ConfirmRegistration"
+    const val END_EVENT_REGISTRATION_COMPLETED: String = "endEvent_RegistrationCompleted"
 
-    const val ACTIVITY_SEND_CONFIRMATION_MAIL: String = "Activity_SendConfirmationMail"
+    const val END_EVENT_SUBSCRIPTION_CONFIRMED: String = "endEvent_SubscriptionConfirmed"
 
-    const val ACTIVITY_SEND_WELCOME_MAIL: String = "Activity_SendWelcomeMail"
+    const val EVENT_AFTER_3_DAYS: String = "event_After3Days"
 
-    const val END_EVENT_REGISTRATION_ABORTED: String = "EndEvent_RegistrationAborted"
+    const val EVENT_EVERY_DAY: String = "event_EveryDay"
 
-    const val END_EVENT_REGISTRATION_COMPLETED: String = "EndEvent_RegistrationCompleted"
+    const val RECEIVE_TASK_CONFIRM_REGISTRATION: String = "receiveTask_ConfirmRegistration"
 
-    const val END_EVENT_SUBSCRIPTION_CONFIRMED: String = "EndEvent_SubscriptionConfirmed"
+    const val SERVICE_TASK_ABORT_REGISTRATION: String = "serviceTask_AbortRegistration"
 
-    const val START_EVENT_REQUEST_RECEIVED: String = "StartEvent_RequestReceived"
+    const val SERVICE_TASK_SEND_CONFIRMATION_MAIL: String =
+        "serviceTask_SendConfirmationMail"
+
+    const val SERVICE_TASK_SEND_WELCOME_MAIL: String = "serviceTask_SendWelcomeMail"
+
+    const val START_EVENT_REQUEST_RECEIVED: String = "startEvent_RequestReceived"
 
     const val START_EVENT_SUBMIT_REGISTRATION_FORM: String =
-        "StartEvent_SubmitRegistrationForm"
+        "startEvent_SubmitRegistrationForm"
 
-    const val SUB_PROCESS_CONFIRM_SUBSCRIPTION: String = "SubProcess_ConfirmSubscription"
-
-    const val TIMER_AFTER_3_DAYS: String = "Timer_After3Days"
-
-    const val TIMER_EVERY_DAY: String = "Timer_EveryDay"
+    const val SUB_PROCESS_CONFIRM_SUBSCRIPTION: String = "subProcess_ConfirmSubscription"
   }
 
   object Messages {
-    const val MESSAGE_FORM_SUBMITTED: String = "Message_FormSubmitted"
-
-    const val MESSAGE_SUBSCRIPTION_CONFIRMED: String = "Message_SubscriptionConfirmed"
+    const val NEWSLETTER_SUBSCRIPTION_CONFIRMED: String = "newsletter.subscriptionConfirmed"
   }
 
   object TaskTypes {
@@ -53,9 +52,9 @@ object NewsletterSubscriptionProcessApi {
   }
 
   object Timers {
-    val TIMER_AFTER_3_DAYS: BpmnTimer = BpmnTimer("Duration", "PT2M30S")
+    val EVENT_AFTER_3_DAYS: BpmnTimer = BpmnTimer("Duration", "PT2M30S")
 
-    val TIMER_EVERY_DAY: BpmnTimer = BpmnTimer("Duration", "PT1M")
+    val EVENT_EVERY_DAY: BpmnTimer = BpmnTimer("Duration", "PT1M")
 
     data class BpmnTimer(
       val type: String,

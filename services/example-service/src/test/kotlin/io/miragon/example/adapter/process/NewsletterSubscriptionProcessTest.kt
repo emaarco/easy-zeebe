@@ -9,6 +9,8 @@ import io.camunda.process.test.api.CamundaSpringProcessTest
 import io.camunda.process.test.api.assertions.ProcessInstanceSelectors
 import io.miragon.common.test.config.TestProcessEngineConfiguration
 import io.miragon.example.adapter.outbound.zeebe.NewsletterSubscriptionProcessAdapter
+import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi.Elements
+import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi.Variables
 import io.miragon.example.application.port.inbound.AbortSubscriptionUseCase
 import io.miragon.example.application.port.inbound.SendConfirmationMailUseCase
 import io.miragon.example.application.port.inbound.SendWelcomeMailUseCase
@@ -88,16 +90,15 @@ class NewsletterSubscriptionProcessTest {
         // given - process is started
         val subscriptionId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b87")
         val instance = startProcessAt(
-            elementId = NewsletterSubscriptionProcessApi.Elements.ACTIVITY_SEND_CONFIRMATION_MAIL,
+            elementId = Elements.SERVICE_TASK_SEND_CONFIRMATION_MAIL,
             subscriptionId = SubscriptionId(subscriptionId)
         )
 
-        // when - time passes, and reminder is sent; then the user confirms
-        CamundaAssert.assertThat(instance)
-            .hasCompletedElement(NewsletterSubscriptionProcessApi.Elements.ACTIVITY_SEND_CONFIRMATION_MAIL, 1)
+        // when - time passes, and a reminder is sent; then the user confirms
+        CamundaAssert.assertThat(instance).hasCompletedElement(Elements.SERVICE_TASK_SEND_CONFIRMATION_MAIL, 1)
         processTestContext.increaseTime(Duration.ofSeconds(60))
         CamundaAssert.assertThatProcessInstance(instance)
-            .hasCompletedElement(NewsletterSubscriptionProcessApi.Elements.ACTIVITY_SEND_CONFIRMATION_MAIL, 2)
+            .hasCompletedElement(Elements.SERVICE_TASK_SEND_CONFIRMATION_MAIL, 2)
 
         processPort.confirmSubscription(SubscriptionId(subscriptionId))
 
@@ -115,7 +116,7 @@ class NewsletterSubscriptionProcessTest {
         // given - process is started
         val subscriptionId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b88")
         val instance = startProcessAt(
-            elementId = NewsletterSubscriptionProcessApi.Elements.ACTIVITY_CONFIRM_REGISTRATION,
+            elementId = Elements.RECEIVE_TASK_CONFIRM_REGISTRATION,
             subscriptionId = SubscriptionId(subscriptionId)
         )
 
@@ -124,8 +125,8 @@ class NewsletterSubscriptionProcessTest {
 
         // then - subscription is aborted
         CamundaAssert.assertThatProcessInstance(instance)
-            .hasCompletedElement(NewsletterSubscriptionProcessApi.Elements.ACTIVITY_ABORT_REGISTRATION, 1)
-        CamundaAssert.assertThatProcessInstance(instance).isCompleted
+            .hasCompletedElement(Elements.SERVICE_TASK_ABORT_REGISTRATION, 1)
+        CamundaAssert.assertThatProcessInstance(instance).isCompleted()
 
         verify { abortSubscriptionUseCase.abort(SubscriptionId(subscriptionId)) }
         verify { sendWelcomeMailUseCase wasNot Called }
@@ -136,8 +137,7 @@ class NewsletterSubscriptionProcessTest {
         elementId: String,
         subscriptionId: SubscriptionId
     ): ProcessInstanceEvent {
-        val variables =
-            mapOf(NewsletterSubscriptionProcessApi.Variables.SUBSCRIPTION_ID to subscriptionId.value.toString())
+        val variables = mapOf(Variables.SUBSCRIPTION_ID to subscriptionId.value.toString())
         return camundaClient.newCreateInstanceCommand()
             .bpmnProcessId(NewsletterSubscriptionProcessApi.PROCESS_ID)
             .latestVersion()

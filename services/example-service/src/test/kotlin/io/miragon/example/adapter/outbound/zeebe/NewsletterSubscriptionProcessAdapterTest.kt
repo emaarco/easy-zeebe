@@ -4,6 +4,7 @@ import io.miragon.common.zeebe.engine.ProcessEngineApi
 import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi
 import io.miragon.example.domain.SubscriptionId
 import io.mockk.Runs
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -23,7 +24,7 @@ class NewsletterSubscriptionProcessAdapterTest {
         // Given
         val subscriptionId = SubscriptionId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
         val expectedProcessInstanceKey = 42L
-        val expectedVariables = mapOf("subscriptionId" to subscriptionId.value.toString())
+        val expectedVariables = mapOf(NewsletterSubscriptionProcessApi.Variables.SUBSCRIPTION_ID to subscriptionId.value.toString())
         every { engineApi.startProcess(any(), any()) } returns expectedProcessInstanceKey
 
         // When
@@ -37,6 +38,7 @@ class NewsletterSubscriptionProcessAdapterTest {
                 variables = expectedVariables
             )
         }
+        confirmVerified(engineApi)
     }
 
     @Test
@@ -52,10 +54,11 @@ class NewsletterSubscriptionProcessAdapterTest {
         // Then
         verify {
             engineApi.sendMessage(
-                messageName = NewsletterSubscriptionProcessApi.Messages.MESSAGE_SUBSCRIPTION_CONFIRMED,
+                messageName = NewsletterSubscriptionProcessApi.Messages.NEWSLETTER_SUBSCRIPTION_CONFIRMED,
                 correlationId = subscriptionId.value.toString(),
                 variables = emptyMap()
             )
         }
+        confirmVerified(engineApi)
     }
 }
