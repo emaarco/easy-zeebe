@@ -11,10 +11,6 @@ import io.mockk.verify
 import org.junit.jupiter.api.Test
 import java.util.*
 
-/**
- * Unit test for SendConfirmationMailWorker.
- * Tests that the worker correctly extracts variables and calls the use case.
- */
 class SendConfirmationMailWorkerTest {
 
     private val useCase = mockk<SendConfirmationMailUseCase>()
@@ -23,14 +19,14 @@ class SendConfirmationMailWorkerTest {
     @Test
     fun `should send confirmation mail when job is received`() {
 
-        // Given
+        // Given: a subscription and mocked service-calls
         val subscriptionId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
         every { useCase.sendConfirmationMail(SubscriptionId(subscriptionId)) } just Runs
 
-        // When
+        // When: the worker handles the job
         underTest.handle(subscriptionId)
 
-        // Then
+        // Then: the use case is called with the correct subscription ID
         verify(exactly = 1) { useCase.sendConfirmationMail(SubscriptionId(subscriptionId)) }
         confirmVerified(useCase)
     }
