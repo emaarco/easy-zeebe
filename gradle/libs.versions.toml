@@ -10,6 +10,7 @@ kotlin_mockito_version = "6.2.3"
 zeebe_version = "8.8.13"
 testcontainers_version = "2.0.3"
 postgres_version = "42.7.9"
+konsist_version = "0.17.3"
 
 [libraries]
 web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring_version" }
@@ -22,6 +23,7 @@ kotlin_logging = { module = "io.github.microutils:kotlin-logging", version.ref =
 
 # testing
 zeebeProcessTest = { module = "io.camunda:camunda-process-test-spring", version.ref = "zeebe_version" }
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist_version" }
 spring_test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring_version" }
 mockito = { module = "org.mockito:mockito-inline", version.ref = "mockito_version" }
 kotlin_mockito = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "kotlin_mockito_version" }

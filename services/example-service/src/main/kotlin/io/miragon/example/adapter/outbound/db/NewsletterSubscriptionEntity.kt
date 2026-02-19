@@ -1,7 +1,11 @@
 package io.miragon.example.adapter.outbound.db
 
 import io.miragon.example.domain.SubscriptionStatus
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.Id
 import java.time.LocalDateTime
 import java.util.*
 

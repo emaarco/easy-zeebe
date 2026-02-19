@@ -94,6 +94,11 @@ does not touch a single line of business logic.
 This structure scales well as processes grow more complex,
 and it makes the codebase predictable enough for AI-powered scaffolding tools to generate correct code on the first try.
 
+The project also ships a **`common-architecture-test`** module that enforces these layer boundaries
+and naming conventions at build time via [Konsist](https://docs.konsist.lemonappdev.com/).
+Services extend its abstract test classes to get automatic checks wired into their regular test suite.
+See [`services/common-architecture-test/README.md`](services/common-architecture-test/README.md) for details.
+
 ### Architectural Decision Records
 
 Key architectural choices are documented as **Architecture Decision Records (ADRs)** using the
@@ -166,20 +171,20 @@ They follow the [Agent Skills](https://agentskills.io/home) open standard and ar
 any compatible agent can execute them.
 Learn more in the [Claude Code Skills docs](https://code.claude.com/docs/en/skills).
 
-| Command                       | What it does                                                                                              |
-|-------------------------------|-----------------------------------------------------------------------------------------------------------|
-| `/create-ticket`              | Draft and create a GitHub issue (feature, bug, or refactor)                                               |
-| `/create-worker`              | Generate or update a `@JobWorker` class (inbound adapter)                                                 |
-| `/create-process-adapter`     | Generate or update a process out-adapter (outbound adapter)                                               |
-| `/create-adr`                 | Write a new Architecture Decision Record in `docs/adr/`                                                   |
-| `/test-worker`                | Generate a unit test for a Zeebe job worker                                                               |
-| `/test-process-adapter`       | Generate a unit test for a Zeebe process out-adapter                                                      |
-| `/test-rest-adapter`          | Generate a unit test for a REST controller                                                                |
-| `/test-application-service`   | Generate a unit test for an application service                                                           |
-| `/test-persistence-adapter`   | Generate a unit test for a persistence adapter                                                            |
-| `/test-process`               | Generate process integration tests                                                                        |
-| `/automate-process`           | Scaffold workers + process adapter (combines the two `create-*` skills)                                   |
-| `/automate-process-hexagonal` | Full hexagonal scaffold: workers, ports, services, and process adapter                                    |
+| Command                       | What it does                                                            |
+|-------------------------------|-------------------------------------------------------------------------|
+| `/create-ticket`              | Draft and create a GitHub issue (feature, bug, or refactor)             |
+| `/create-worker`              | Generate or update a `@JobWorker` class (inbound adapter)               |
+| `/create-process-adapter`     | Generate or update a process out-adapter (outbound adapter)             |
+| `/create-adr`                 | Write a new Architecture Decision Record in `docs/adr/`                 |
+| `/test-worker`                | Generate a unit test for a Zeebe job worker                             |
+| `/test-process-adapter`       | Generate a unit test for a Zeebe process out-adapter                    |
+| `/test-rest-adapter`          | Generate a unit test for a REST controller                              |
+| `/test-application-service`   | Generate a unit test for an application service                         |
+| `/test-persistence-adapter`   | Generate a unit test for a persistence adapter                          |
+| `/test-process`               | Generate process integration tests                                      |
+| `/automate-process`           | Scaffold workers + process adapter (combines the two `create-*` skills) |
+| `/automate-process-hexagonal` | Full hexagonal scaffold: workers, ports, services, and process adapter  |
 
 ### 🔍 Subagents
 

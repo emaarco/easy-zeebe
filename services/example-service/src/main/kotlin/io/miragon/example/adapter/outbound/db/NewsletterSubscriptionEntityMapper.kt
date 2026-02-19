@@ -1,6 +1,10 @@
 package io.miragon.example.adapter.outbound.db
 
-import io.miragon.example.domain.*
+import io.miragon.example.domain.Email
+import io.miragon.example.domain.Name
+import io.miragon.example.domain.NewsletterId
+import io.miragon.example.domain.NewsletterSubscription
+import io.miragon.example.domain.SubscriptionId
 
 object NewsletterSubscriptionEntityMapper {
 

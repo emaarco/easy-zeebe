@@ -27,6 +27,7 @@ dependencies {
     testImplementation(libs.bundles.test)
     testImplementation(libs.zeebeProcessTest)
     testImplementation(project(":services:common-zeebe-test"))
+    testImplementation(project(":services:common-architecture-test"))
     testImplementation("com.h2database:h2")
 }
 
