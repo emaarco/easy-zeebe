@@ -10,6 +10,8 @@ kotlin_mockito_version = "6.2.3"
 zeebe_version = "8.8.13"
 testcontainers_version = "2.0.3"
 postgres_version = "42.7.9"
+konsist_version = "0.17.3"
+junit_version = "5.11.4"
 
 [libraries]
 web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring_version" }
@@ -19,6 +21,10 @@ postgres = { module = 'org.postgresql:postgresql', version.ref = 'postgres_versi
 zeebeSdk = { module = "io.camunda:camunda-spring-boot-starter", version.ref = "zeebe_version" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin_version" }
 kotlin_logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin_logging_version" }
+
+# architecture testing
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist_version" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit_version" }
 
 # testing
 zeebeProcessTest = { module = "io.camunda:camunda-process-test-spring", version.ref = "zeebe_version" }
