@@ -27,12 +27,12 @@
     <bpmn:endEvent id="endEvent_RegistrationAborted" name="Registration aborted">
       <bpmn:incoming>Flow_1bsb8no</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:endEvent id="endEvent_RegistrationCompleted" name="Registration completed">
-      <bpmn:incoming>Flow_1i7hjid</bpmn:incoming>
-    </bpmn:endEvent>
     <bpmn:serviceTask id="serviceTask_SendWelcomeMail" name="Send&#10;Welcome-Mail">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="newsletter.sendWelcomeMail" />
+        <zeebe:ioMapping>
+          <zeebe:output source="=welcomeMailSent" target="welcomeMailSent" />
+        </zeebe:ioMapping>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_09cuvzp</bpmn:incoming>
       <bpmn:outgoing>Flow_1i7hjid</bpmn:outgoing>
@@ -82,6 +82,9 @@
       </bpmn:extensionElements>
       <bpmn:outgoing>Flow_1csfyyz</bpmn:outgoing>
     </bpmn:startEvent>
+    <bpmn:endEvent id="endEvent_RegistrationCompleted" name="Registration completed">
+      <bpmn:incoming>Flow_1i7hjid</bpmn:incoming>
+    </bpmn:endEvent>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="newsletter-subscription">
@@ -95,15 +98,15 @@
           <dc:Bounds x="971" y="145" width="59" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_0ocbg8y_di" bpmnElement="endEvent_RegistrationCompleted">
+      <bpmndi:BPMNShape id="Activity_105q7u2_di" bpmnElement="serviceTask_SendWelcomeMail">
+        <dc:Bounds x="820" y="280" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_00et80w_di" bpmnElement="endEvent_RegistrationCompleted">
         <dc:Bounds x="982" y="302" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="971" y="345" width="59" height="27" />
         </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_105q7u2_di" bpmnElement="serviceTask_SendWelcomeMail">
-        <dc:Bounds x="820" y="280" width="100" height="80" />
-        <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1gbt6dx_di" bpmnElement="subProcess_ConfirmSubscription" isExpanded="true">
         <dc:Bounds x="290" y="220" width="480" height="218" />

@@ -1,33 +1,36 @@
 ---
 name: create-adr
-description: Write a new Architectural Decision Record (ADR) for this project. Use when the user wants to document an architectural or design decision.
 argument-hint: "\"<short description of the decision>\""
 allowed-tools: Read, Write, Glob
+description: Write a new Architectural Decision Record (ADR) for this project in MADR format with interactive content gathering and user confirmation before writing. Use when the user asks to "write an ADR", "create an architectural decision record", or "document a design decision". Auto-numbers from the existing ADR index, derives the filename slug from the title, and shows a full draft for review before writing the file.
 ---
 
 # Skill: create-adr
 
 Write a new Architectural Decision Record following the MADR format used in `docs/adr/`.
 
-## Usage
-
-```
-/create-adr "<short description of the decision>"
-```
-
-Example:
-
-```
-/create-adr "use bpmn-to-code for process constant generation"
-```
-
 ## Instructions
 
-### Step 1 – Determine the next ADR number
+### Step 1 – Verify prerequisites
 
-Use Glob to list all files matching `docs/adr/*.md`. Extract the four-digit numeric prefix from each filename
+Check that `docs/adr/` exists by running Glob for `docs/adr/*.md`.
+
+- If the directory does not exist or Glob returns no results at all (not even the template), **stop immediately**
+  and tell the user: "The `docs/adr/` directory is missing. Please create it and add an ADR template at
+  `docs/adr/0000-adr-template.md` before running this skill again."
+
+Check that `docs/adr/0000-adr-template.md` exists.
+
+- If the template file is missing, **stop immediately** and tell the user: "No ADR template found at
+  `docs/adr/0000-adr-template.md`. Please add a template before running this skill again."
+
+Do not proceed until both checks pass.
+
+### Step 1b – Determine the next ADR number
+
+From the Glob results, extract the four-digit numeric prefix from each filename
 (e.g. `0001` from `0001-hexagonal-architecture.md`). The next number is the highest existing prefix plus one,
-zero-padded to four digits. If no non-template files exist, start at `0001`.
+zero-padded to four digits. If no non-template files exist (only `0000-adr-template.md`), start at `0001`.
 
 ### Step 2 – Derive the filename slug
 
@@ -44,7 +47,7 @@ Example: `"use bpmn-to-code for process constant generation"` →
 
 ### Step 3 – Read the template
 
-Read `docs/adr/0000-adr-template.md` as the structural reference.
+Read `docs/adr/0000-adr-template.md` (already confirmed to exist in Step 1) as the structural reference.
 
 ### Step 4 – Gather content from the user
 

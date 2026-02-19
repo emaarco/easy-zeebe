@@ -1,5 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe
 
+import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi.Variables.WELCOME_MAIL_SENT
 import io.miragon.example.application.port.inbound.SendWelcomeMailUseCase
 import io.miragon.example.domain.SubscriptionId
 import io.mockk.Runs
@@ -8,8 +9,10 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.util.*
+import java.util.Map.entry
 
 class SendWelcomeMailWorkerTest {
 
@@ -24,9 +27,10 @@ class SendWelcomeMailWorkerTest {
         every { useCase.sendWelcomeMail(SubscriptionId(subscriptionId)) } just Runs
 
         // When: the worker handles the job
-        underTest.handle(subscriptionId)
+        val result = underTest.handle(subscriptionId)
 
         // Then: the use case is called with the correct subscription ID
+        assertThat(result).containsExactly(entry(WELCOME_MAIL_SENT, true))
         verify(exactly = 1) { useCase.sendWelcomeMail(SubscriptionId(subscriptionId)) }
         confirmVerified(useCase)
     }

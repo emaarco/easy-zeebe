@@ -1,102 +1,53 @@
 ---
 name: create-rest-controller
-description: Scaffold or update a REST controller (inbound adapter). Accepts a use-case port file, a BPMN model, or a plain description. Use when the user wants to generate an inbound REST adapter for a use case.
 argument-hint: "[<path-to-UseCase-port-file>] [http-verb] [path]"
 allowed-tools: Read, Write, Glob
+description: Scaffold or update a Spring `@RestController` (inbound adapter) with nested request/response DTOs and a `toCommand()` mapping function. Use when the user asks to "create a REST controller", "add an endpoint", "generate an inbound adapter", or "scaffold a controller". Accepts a use-case port file or a plain description; infers HTTP verb and path from the use-case name; updates existing controllers if one already exists.
 ---
 
 # Skill: create-rest-controller
 
-Generate one REST controller (inbound adapter) for a specific use case.
-To generate controllers for multiple use cases, invoke this skill once per use case.
+Generates or updates one `@RestController` (inbound adapter) for a specific use case in `adapter/inbound/rest/`,
+including:
 
-## Usage
-
-```
-/create-rest-controller [<path-to-UseCase-port-file>] [http-verb] [path]
-```
-
-Examples:
-
-```
-# From a use-case port file, specifying verb and path
-/create-rest-controller services/example-service/src/main/kotlin/io/miragon/example/application/port/inbound/SubscribeToNewsletterUseCase.kt POST /api/subscriptions/subscribe
-
-# From a use-case port file — skill asks for verb and path if not supplied
-/create-rest-controller services/example-service/src/main/kotlin/io/miragon/example/application/port/inbound/ConfirmSubscriptionUseCase.kt
-
-# No arguments — skill searches for use-case port files and asks which one to use
-/create-rest-controller
-```
-
-If the HTTP verb or path are not provided, the skill infers sensible defaults from the use-case name
-and asks for confirmation before generating.
-
-## What This Skill Creates or Updates
-
-- One `@RestController` class for the specified use case
-- Located in `adapter/inbound/rest/`
 - Nested request and response `data class` DTOs
 - A private `toCommand()` extension function for request-to-command mapping
 
-If the file already exists, the skill opens it, compares it to the expected structure, and applies any
-missing or stale parts.
+To generate controllers for multiple use cases, invoke this skill once per use case.
+If the file already exists, the skill compares it to the expected structure and applies only what is missing or stale.
 
 ## Pattern
 
 ```kotlin
 @RestController
-@RequestMapping("/api/subscriptions")
-class SubscribeToNewsletterController(private val useCase: SubscribeToNewsletterUseCase) {
+@RequestMapping("/api/resource")
+class DoSomethingController(private val useCase: DoSomethingUseCase) {
 
-    private val log = KotlinLogging.logger {}
-
-    @PostMapping("/subscribe")
-    fun subscribeToNewsletter(@RequestBody input: SubscriptionForm): ResponseEntity<Response> {
-        log.debug { "Received REST-request to subscribe to newsletter: $input" }
-        val subscriptionId = useCase.subscribe(input.toCommand())
-        return ResponseEntity.ok().body(Response(subscriptionId.value.toString()))
+    @PostMapping("/action")
+    fun doSomething(@RequestBody input: Form): ResponseEntity<Response> {
+        ...
     }
 
-    data class SubscriptionForm(
-        val email: String,
-        val name: String,
-        val newsletterId: String
-    )
+    data class Form(val field: String)
+    data class Response(val id: String)
 
-    data class Response(val subscriptionId: String)
-
-    private fun SubscriptionForm.toCommand() = SubscribeToNewsletterUseCase.Command(
-        Email(email),
-        Name(name),
-        NewsletterId(UUID.fromString(newsletterId))
-    )
+    private fun Form.toCommand() = DoSomethingUseCase.Command(DomainType(field))
 }
 ```
 
-For void use cases (no return value), the pattern uses `@PathVariable` and returns `ResponseEntity<Void>`:
+See `references/rest-controller-template.kt` for the full annotated example.
 
-```kotlin
-@PostMapping("/confirm/{subscriptionId}")
-fun confirmSubscription(@PathVariable subscriptionId: String): ResponseEntity<Void> {
-    log.debug { "Received REST-request to confirm subscription: $subscriptionId" }
-    useCase.confirm(SubscriptionId(UUID.fromString(subscriptionId)))
-    return ResponseEntity.ok().build()
-}
-```
+## IMPORTANT
 
-## Key Rules
-
-- One controller class per use case; one endpoint method per controller is the default
+- One endpoint aka method per controller-class.
 - Inject the use-case interface as the **only** constructor parameter
 - Wrap all request fields in domain value objects inside `toCommand()` before passing to the use case;
-  never pass raw `String` or `UUID` directly to the use case method
 - Always return `ResponseEntity<T>`: use `ResponseEntity<Response>` when the use case returns a value,
   `ResponseEntity<Void>` when it returns `Unit`
 - Request/response DTOs are `data class` types nested inside the controller class
-- Log at `debug` level on entry; include the input in the log message; never log sensitive data
 - Before writing the controller, scan the `domain/` package for value objects matching each request field.
-  Use them in `toCommand()` directly. If a needed value object does not exist, create it first.
+  Use them in `toCommand()` directly. If a required value object does not exist, ask the user whether you should create
+  it first.
 
 ## Instructions
 
@@ -104,14 +55,15 @@ fun confirmSubscription(@PathVariable subscriptionId: String): ResponseEntity<Vo
 
 Determine which use-case interface to target based on `$ARGUMENTS`:
 
-- **Use-case port file (`.kt`)**: read it directly. Extract: package name, interface name, method signature(s),
-  `Command` nested class fields (if present), return type.
-- **BPMN file (`.bpmn`)**: search the same service module for use-case port files
-  (Glob `**/application/port/inbound/*UseCase.kt`). List them and ask which one to target.
-- **No argument / plain description**: search the whole codebase for use-case port files
-  (Glob `**/application/port/inbound/*UseCase.kt`). List them and ask which one to use.
+- **Use-case port file (`.kt`)**: Read it directly and extract the package name, interface name, method signature(s),
+  `Command` nested class fields (if present), and return type.
 
-### Step 2 – Determine the target package and source root
+If no argument is passed:
+
+- Search the whole codebase for use-case port files using a Glob `**/application/port/inbound/*UseCase.kt`.
+- List the results and ask the user which one to use before continuing.
+
+### Step 2 – Analyze the use-case and controller
 
 Derive the base package from the use-case port package
 (e.g. `io.miragon.example.application.port.inbound` → base: `io.miragon.example`).
@@ -145,27 +97,16 @@ Check whether a file with that name already exists at the target location.
 
 **If the file does not exist — generate:**
 
-Follow the Pattern above. Concretely:
-
-- `@RestController` + `@RequestMapping("<base-path>")` at class level
-- Constructor parameter: the use-case interface
-- One method annotated with `@PostMapping`/`@GetMapping`/etc.
-    - `@RequestBody input: <RequestForm>` for POST/PUT requests with a body
-    - `@PathVariable id: String` for path-parameter-only endpoints (e.g. confirm, delete)
-    - `@RequestParam` for query parameters (e.g. search/list endpoints)
-- Nested `data class <Name>Form(...)` for request fields (one `String` field per `Command` field)
-- Nested `data class Response(...)` for the return value (one `String` field per domain ID/value;
-  omit if the use case returns `Unit`)
-- Private extension function `<Name>Form.toCommand()` wrapping each field in its domain value object
-- `KotlinLogging.logger {}` for debug-level entry logging
-- Scan `**/domain/` for existing value objects matching each field; use them in `toCommand()`.
-  **Never** leave a `TODO` for domain-type substitution — resolve the type now, creating it if necessary.
+- Use `references/rest-controller-template.kt` as a starting point
+- Scan `domain/` for value objects; create missing ones before writing
+- Never leave a TODO for domain-type substitution
 
 **If the file already exists — update:**
 
-Read the existing file. Compare it against the use-case interface signature. Apply only what is missing
-or outdated: add missing fields to the request form, update the return type, correct the `toCommand()`
-mapping. Preserve any existing logic.
+Read the existing file. Compare it against the use-case interface signature.
+Apply only what is missing or outdated:
+add missing fields to the request form, update the return type, correct the `toCommand()` mapping.
+Preserve any existing logic.
 
 ### Step 5 – Report
 

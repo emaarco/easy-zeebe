@@ -171,20 +171,21 @@ They follow the [Agent Skills](https://agentskills.io/home) open standard and ar
 any compatible agent can execute them.
 Learn more in the [Claude Code Skills docs](https://code.claude.com/docs/en/skills).
 
-| Command                       | What it does                                                            |
-|-------------------------------|-------------------------------------------------------------------------|
-| `/create-ticket`              | Draft and create a GitHub issue (feature, bug, or refactor)             |
-| `/create-worker`              | Generate or update a `@JobWorker` class (inbound adapter)               |
-| `/create-process-adapter`     | Generate or update a process out-adapter (outbound adapter)             |
-| `/create-adr`                 | Write a new Architecture Decision Record in `docs/adr/`                 |
-| `/test-worker`                | Generate a unit test for a Zeebe job worker                             |
-| `/test-process-adapter`       | Generate a unit test for a Zeebe process out-adapter                    |
-| `/test-rest-adapter`          | Generate a unit test for a REST controller                              |
-| `/test-application-service`   | Generate a unit test for an application service                         |
-| `/test-persistence-adapter`   | Generate a unit test for a persistence adapter                          |
-| `/test-process`               | Generate process integration tests                                      |
-| `/automate-process`           | Scaffold workers + process adapter (combines the two `create-*` skills) |
-| `/automate-process-hexagonal` | Full hexagonal scaffold: workers, ports, services, and process adapter  |
+**Zeebe skills** — cover the full Zeebe development lifecycle:
+
+| Command                   | What it does                                                            |
+|---------------------------|-------------------------------------------------------------------------|
+| `/create-worker`          | Generate or update a `@JobWorker` class (inbound adapter)               |
+| `/create-process-adapter` | Generate or update a process out-adapter (outbound adapter)             |
+| `/automate-process`       | Scaffold workers + process adapter (combines the two `create-*` skills) |
+| `/test-worker`            | Generate a unit test for a Zeebe job worker                             |
+| `/test-process-adapter`   | Generate a unit test for a Zeebe process out-adapter                    |
+| `/test-process`           | Generate process integration tests                                      |
+| `/create-adr`             | Write a new Architecture Decision Record in `docs/adr/`                 |
+
+**Supporting skills** — generic hexagonal-architecture helpers included as inspiration:
+`/create-ticket`, `/create-rest-controller`, `/create-persistence-adapter`,
+`/test-rest-adapter`, `/test-application-service`, `/test-persistence-adapter`
 
 ### 🔍 Subagents
 

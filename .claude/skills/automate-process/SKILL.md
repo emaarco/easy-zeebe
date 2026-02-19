@@ -1,8 +1,8 @@
 ---
 name: automate-process
-description: Scaffold full hexagonal glue-code (workers, use-case interfaces, application services, and process adapter). Accepts a ProcessApi file, a BPMN model, or a plain description. Use when the user wants to generate a complete hexagonal layer for a new Zeebe process.
 argument-hint: "[<path-to-ProcessApi-or-BPMN-file>]"
 allowed-tools: Read, Write, Glob
+description: Generate full hexagonal glue-code for a Zeebe BPMN process across all five layers — inbound workers, inbound/outbound port interfaces, application services, and a process out-adapter. Use when the user asks to "automate a process", "generate glue-code for a BPMN process", or "scaffold workers and adapters". Accepts a ProcessApi file, a BPMN model, or a plain description; skips files that already exist; optionally runs the review-process audit first.
 ---
 
 # Skill: automate-process
@@ -10,30 +10,11 @@ allowed-tools: Read, Write, Glob
 Generate full hexagonal-architecture glue-code for automating a Zeebe BPMN process:
 job workers, process out-adapter, inbound/outbound port interfaces, and application service stubs.
 
-> **Note:** The generated code follows the hexagonal architecture used in this project.
-> If your project uses a different architecture, treat the output as a starting point
-> and adapt the package structure, naming conventions, and layering to your needs.
-
-## Usage
-
-```
-/automate-process [<path-to-ProcessApi-or-BPMN-file>]
-```
-
-Examples:
-
-```
-# From a ProcessApi file
-/automate-process services/example-service/src/main/kotlin/io/miragon/example/adapter/process/NewsletterSubscriptionProcessApi.kt
-
-# From a BPMN file — skill finds the ProcessApi automatically
-/automate-process services/example-service/src/main/resources/bpmn/newsletter.bpmn
-
-# No arguments — skill searches for ProcessApi files and asks which one to use
-/automate-process
-```
-
 ## What This Skill Creates
+
+// TODO: use a list instead of a layer like
+
+- Inbound Workers: stored in `adapter/inbound/zeebe` with one `@JobWorker` per serviceTask
 
 | Layer                | Location                     | What                                     |
 |----------------------|------------------------------|------------------------------------------|
@@ -45,7 +26,7 @@ Examples:
 
 The adapter and worker files reference these interfaces so the hexagonal wiring is complete from the start.
 
-## CRITICAL Guardrail
+## IMPORTANT
 
 **All string constants must come from the ProcessApi — never use raw string literals.**
 
@@ -56,16 +37,16 @@ The adapter and worker files reference these interfaces so the hexagonal wiring 
 
 ## Instructions
 
-### Step 0 – Validate the BPMN model first
+### Preparation – Validate the BPMN model first
 
-Before generating any code, offer to run the `review-process` subagent to validate the BPMN model:
+Before generating any code, ask the user whether he has already performed the `review-process` subagent - and ask him
+whether you should do it. This is very useful, to only generate code for clean processes that follow the styleguide.
 
-1. Ask the user: *"Would you like me to run the review agent first to validate the BPMN model before generating
-   glue-code?"*
-2. If they agree, invoke the `review-process` subagent on the BPMN file or the process identified from `$ARGUMENTS`.
-3. If the review surfaces issues, present them to the user and wait for confirmation that they have been resolved before
-   continuing.
-4. If the user skips the review, proceed directly to Step 1.
+If the user agrees to running the subagent, then start it, but terminate the execution of this skill. Tell the user to
+wait until the `review-process` agent is done.
+
+After that he must fully restart the `automate-process` once again
+If he disagrees to perform the `review` agent, continue with step 1.
 
 ### Step 1 – Resolve the input source
 
@@ -79,7 +60,7 @@ Determine where the process constants come from based on `$ARGUMENTS`:
 - **No argument / plain description**: search the whole codebase for `*ProcessApi.kt` files (Glob
   `**/adapter/process/*ProcessApi.kt`). List them and ask the user which one to use.
 
-If you can't find a ProcessApi, ask the user to generate one first.
+If you can't find a ProcessApi, pause the execution of the skill, and ask the user to generate one first.
 
 ### Step 2 – Determine packages and source root
 

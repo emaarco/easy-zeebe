@@ -1,53 +1,41 @@
 ---
 name: test-application-service
-description: Generate a unit test for an application service (use case) following the project's mockk test patterns. Use when the user asks to write or generate tests for an application service.
 argument-hint: "<path-to-service-file>"
 allowed-tools: Read, Write, Glob, Bash(./gradlew *)
+description: Generate a pure mockk unit test (no Spring context) for an application-layer use-case service. Use when the user asks to "write tests for an application service", "test a use case", or "generate unit tests for a service". Follows the project's given/when/then pattern with `confirmVerified` after every verify block; uses domain test builders and fixed UUIDs; no Spring context required.
 ---
 
 # Skill: test-application-service
 
 Generate a unit test for an application service (use case) following the project's established test patterns.
 
-## Usage
-
-```
-/test-application-service <path-to-service-file>
-```
-
-Example:
-
-```
-/test-application-service services/example-service/src/main/kotlin/io/miragon/example/application/service/SendConfirmationMailService.kt
-```
-
 ## Pattern
 
 Application service tests are pure unit tests using mockk. No Spring context required.
-See `SendConfirmationMailServiceTest.kt` and `AbortSubscriptionServiceTest.kt` as reference implementations.
 
 ```kotlin
-class ServiceNameTest {
-
-    private val repository = mockk<RepositoryInterface>()
-    private val underTest = ServiceName(repository = repository)
+class YourServiceTest {
+    private val port = mockk<SomePort>()
+    private val underTest = YourService(port = port)
 
     @Test
-    fun `describe what the service does`() {
-        val id = SubscriptionId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
-        val subscription = testNewsletterSubscription(id = id)
-        every { repository.find(id) } returns subscription
-
-        underTest.execute(id)
-
-        verify { repository.find(id) }
-        confirmVerified(repository)
+    fun `describe behaviour`() {
+        // given: valid input and mocked port behaviour
+        every { port.method(any()) } returns value   // or: just Runs
+        // when: the use case is executed
+        underTest.execute(command)
+        // then: the port is called with the expected arguments
+        verify { port.method(expected) }
+        confirmVerified(port)
     }
 }
 ```
 
-## Key Rules
+See `references/service-test-template.kt` for the full annotated example (slot capture, multiple mocks).
 
+## IMPORTANT
+
+- Mirror the class from the production-code with just a suffix `Test`
 - Instantiate the service directly — no Spring context
 - `mockk<Interface>()` for each constructor dependency
 - `confirmVerified(mock)` inline at the end of **each** test — not in `@AfterEach`
@@ -55,32 +43,50 @@ class ServiceNameTest {
 - One `@Test` per distinct behaviour (happy path + exception if the service throws)
 - Use test builders from `domain/TestObjectBuilder.kt` (e.g. `testNewsletterSubscription()`)
 - Fixed UUID strings for deterministic test data
+- Structure each test with `// given: <what is set up>`, `// when: <the action>`, `// then: <what is verified>`
+  sections; omit the section comment when that phase is a single line
 - Backtick test names
 
 ## Instructions
 
-1. **Read and identify** — read the service file at `$ARGUMENTS` and extract:
-    - Service class name and the use-case interface it implements
-    - Constructor dependencies (repository interfaces, outbound ports)
-    - Each public method: signature, what it calls, what it returns or throws
-    - Domain value types used (e.g. `SubscriptionId`, `NewsletterSubscription`)
+### Step 1 – Read and identify
 
-   Also locate test builders — look for `test*()` functions in `domain/TestObjectBuilder.kt`. If none
-   exists, ask before generating test data manually.
+Read the service file at `$ARGUMENTS` and extract:
 
-2. **Locate the test file** — mirror `src/main/kotlin` → `src/test/kotlin`, same package path, append `Test` to the
-   class name. If the file already exists, open it and switch to fix mode. If not, proceed to generate a new file.
+- Service class name and the use-case interface it implements
+- Constructor dependencies (repository interfaces, outbound ports)
+- Each public method: signature, what it calls, what it returns or throws
+- Domain value types used (e.g. `SubscriptionId`, `NewsletterSubscription`)
 
-3. **Determine required test cases** — one happy-path test per public method; add an exception test only if
-   the service explicitly throws (e.g. `NoSuchElementException`). Keep to ≤3 tests; if more scenarios
-   exist, list them and ask for permission before writing.
+If no matching service was found, pause the execution and, ask the user to provide the path to the service
 
-4. **Generate or fix the test file**:
-    - Instantiate the service directly (no Spring context); `mockk<Interface>()` per constructor dependency
-    - Stub Unit-returning methods with `just Runs`; use `returns value` otherwise
-    - `verify { ... }` for each interaction; `confirmVerified(mock)` at the end of every test
-    - Use test builders (e.g. `testNewsletterSubscription()`) and fixed UUID strings for test data
-    - Backtick test names describing what the service does
+Also locate test builders. Look for functions in the test module and its `domain` package that build objects that are
+used in the service.
+If none exists, pause the execution as well.
+Ask the user to provide or link to the builder(s)
 
-5. **Write, run, and report** — write the file to the located path; run all tests in the class via an
-   appropriate Gradle command; report the created or updated file path and a brief summary.
+### Step 2 – Locate the test file
+
+- Derive the test file path by replacing `src/main/kotlin` with `src/test/kotlin` in the service file path.
+- Keep the same package structure and class name, but append `Test` as a suffix (e.g. `SubscribeToNewsletterService` → `SubscribeToNewsletterServiceTest`).
+- If the test file already exists at that path, open it and switch to fix mode.
+- If it does not exist, proceed to generate a new file in Step 4.
+
+### Step 3 – Determine required test cases
+
+- Write one happy-path test for each public method of the service.
+- Add an exception test only when the service explicitly throws (e.g. `NoSuchElementException`).
+- Keep the total number of tests to three or fewer.
+- If more scenarios are applicable, list them and ask the user for permission before writing additional tests.
+
+### Step 4 – Generate or fix the test file
+
+- Use `references/service-test-template.kt` as a starting point
+- Use test builders from `domain/TestObjectBuilder.kt`; fixed UUID strings
+- Backtick test names
+
+### Step 5 – Write, run, and report
+
+- Write the file to the located path;
+- Run all tests in the class via an appropriate Gradle command;
+- Report the created or updated file path and a brief summary.

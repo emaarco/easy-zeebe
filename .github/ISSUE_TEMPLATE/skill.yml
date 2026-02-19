@@ -1,0 +1,54 @@
+name: Skill
+description: Request a new Claude Code skill or propose a change to an existing one
+title: "[Skill]: "
+labels:
+  - skill
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to request a **new** skill or to propose a **change** to an existing one.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Create or Update?
+      description: Should this skill be created from scratch, or is an existing skill being modified?
+      options:
+        - Create – new skill
+        - Update – existing skill
+    validations:
+      required: true
+
+  - type: input
+    id: skill-name
+    attributes:
+      label: Skill Name
+      description: Kebab-case name of the skill to create or update, e.g. `create-domain-event`.
+      placeholder: create-domain-event
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What should it do?
+      description: Describe the skill's purpose, when Claude should invoke it, and what output it should produce. Include before/after if proposing a change.
+      placeholder: |
+        The skill should scaffold a domain event class and its publisher port whenever the user says
+        "create a domain event for X". It should generate:
+        - `domain/event/XEvent.kt` — an immutable data class
+        - `application/port/out/PublishXEventPort.kt` — the outbound port interface
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Optional checklist of what "done" looks like.
+      placeholder: |
+        - [ ] Generated event class is an immutable data class in the `domain.event` package
+        - [ ] Generated code compiles and passes `./gradlew build`
+    validations:
+      required: false

@@ -1,25 +1,64 @@
 ---
 name: test-process
-description: Generate process integration tests for a Zeebe BPMN process using @CamundaSpringProcessTest. Use when the user asks to write integration tests for a Zeebe process.
 argument-hint: "<process-name-or-bpmn-path>"
-allowed-tools: Read, Write, Glob, Grep, Bash(./gradlew *)
+allowed-tools: Read, Write, Glob, Grep, Bash(./gradlew *), AskUserQuestion
+description: Generate `@CamundaSpringProcessTest` integration tests for a Zeebe BPMN process, with one `@Test` method per selected process path. Use when the user asks to "write process tests", "generate integration tests for a process", or "test the newsletter process". Analyzes all testable paths (happy path, gateway branches, timer expiry, message events, boundary events), lets the user select which to generate, and supports update mode to append tests to an existing class.
 ---
 
 # Skill: test-process
 
-Generate process integration tests for a Zeebe BPMN process.
+Generates a `@CamundaSpringProcessTest` integration test class for a Zeebe BPMN process.
+The test class contains one `@Test` method per selected process path.
+Such a path could be happy path, gateway branches or boundary events.
 
-## Usage
+To add paths to an existing test class, invoke this skill again.
+It will switch to update mode and only append the new test methods.
 
-```
-/test-process <process-name-or-bpmn-path>
+## IMPORTANT:
+
+- One `@Test` method per distinct process path (happy path, each timer expiry, each message branch, each boundary event)
+- Use `@MockkBean` for every use-case interface that a worker injects — these are the collaborators
+- Set up all mocks in `@BeforeEach` with `every { useCase.method(any()) } just Runs`
+- Use fixed UUID strings for deterministic, reproducible test data — use different UUIDs per test to avoid correlation
+  conflicts
+- Drive the process via the process adapter (`processPort.*`) not via `camundaClient` directly, except when using
+  `startBeforeElement` for mid-process scenarios
+- Use `ProcessInstanceSelectors.byKey(instanceKey)` to create the selector for assertions
+- Always end each test with `confirmVerified(...)` across all mocked use cases to catch unexpected interactions
+- Use `verify { useCase wasNot Called }` for negative assertions (not `verify(exactly = 0) { ... }`)
+
+## Pattern
+
+```kotlin
+@CamundaSpringProcessTest
+@SpringBootTest
+@Import(TestProcessEngineConfiguration::class)
+class NewsletterProcessTest {
+
+    @Autowired
+    lateinit var processPort: NewsletterSubscriptionProcess
+
+    @MockkBean
+    lateinit var subscribeUseCase: SubscribeToNewsletterUseCase
+
+    @BeforeEach
+    fun setUp() {
+        every { subscribeUseCase.execute(any()) } just Runs
+    }
+
+    @Test
+    fun `happy path - subscription confirmed`() {
+        val instanceKey = processPort.startNewsletterSubscription(NewsletterSubscriptionId("uuid-1"))
+        val selector = ProcessInstanceSelectors.byKey(instanceKey)
+
+        CamundaAssert.assertThat(selector).hasCompletedElement("serviceTask_Subscribe")
+        verify { subscribeUseCase.execute(any()) }
+        confirmVerified(subscribeUseCase)
+    }
+}
 ```
 
-Example:
-```
-/test-process newsletter
-/test-process services/example-service/src/main/resources/bpmn/newsletter.bpmn
-```
+See `references/process-test-template.kt` for all variants (timer, message, mid-process start).
 
 ## SDK Context
 
@@ -32,173 +71,124 @@ This project uses:
 
 If you encounter imports or usage patterns not covered by this skill, ask the user before proceeding.
 
-## Key Rules
-
-- One `@Test` method per distinct process path (happy path, each timer expiry, each message branch, each boundary event)
-- Use `@MockkBean` for every use-case interface that a worker injects — these are the collaborators
-- Set up all mocks in `@BeforeEach` with `every { useCase.method(any()) } just Runs`
-- Use fixed UUID strings for deterministic, reproducible test data — use different UUIDs per test to avoid correlation conflicts
-- Drive the process via the process adapter (`processPort.*`) not via `camundaClient` directly, except when using `startBeforeElement` for mid-process scenarios
-- Use `ProcessInstanceSelectors.byKey(instanceKey)` to create the selector for assertions
-- Always end each test with `confirmVerified(...)` across all mocked use cases to catch unexpected interactions
-- Use `verify { useCase wasNot Called }` for negative assertions (not `verify(exactly = 0) { ... }`)
-
 ## Instructions
 
 ### Step 1 – Locate and read the BPMN file
 
-If `$ARGUMENTS` is a file path, read it directly. If it is a process name, search for `*$ARGUMENTS*.bpmn` in
-`src/main/resources/bpmn/`. Read the BPMN and extract:
+If `$ARGUMENTS` is a file path, read it directly.
+If it is a process name, search for `*$ARGUMENTS*.bpmn` in `src/main/resources/bpmn/`.
+
+Read the full BPMN XML and extract **all** the following:
 
 - Process ID (`<bpmn:process id="...">`)
-- All service task types (`zeebe:taskDefinition type` attribute)
-- All message names (`<bpmn:message name="...">`)
-- All timer definitions and the boundary events they attach to
-- All gateway branches and their conditions
-- Element IDs for key tasks and events
+- All service tasks: element ID + `zeebe:taskDefinition type` attribute
+- All receive tasks and intermediate message catch events: element ID + referenced message name
+- All message definitions: name + correlation key expression
+- All timer definitions: element ID, whether boundary or intermediate catch event, attached activity (if boundary),
+  duration/cycle expression (e.g. `PT60S`, `R3/PT60S`)
+- All exclusive/parallel/inclusive gateways: element ID + outgoing sequence flows with their condition expressions
+- All boundary events (error, escalation, non-timer): element ID + `attachedToRef` activity + event type
+- All end events: element ID + type (none, error, terminate, escalation) and which gateway branch leads to them
 
-### Step 2 – Read the ProcessApi file
+If you cannot find the bpmn-file ask the user to provide a path to it.
 
-Locate the ProcessApi file (typically `adapter/process/*ProcessApi.kt` in the same module). Read and extract:
+### Step 2 – Analyze process paths
 
-- `PROCESS_ID`, `TaskTypes.*`, `Messages.*`, `Variables.*`, `Elements.*` constants
+Using the data collected in Step 1, derive every distinct testable path in the process.
+Do **not** show this analysis to the user. Keep it as an internal working set.
 
-### Step 3 – Read the process adapter
+For each path, record:
 
-Locate the process out-adapter (`adapter/outbound/zeebe/*ProcessAdapter.kt`). Identify:
+- **Label** — short display name (e.g. "Happy path", "Timer: registration expires")
+- **Description** — which BPMN elements are exercised and what the outcome is
+- **Technique** — recommended test technique: `full-start`, `startBeforeElement`, `increaseTime`, `sendMessage`
 
-- The class name (used for `@Autowired processPort`)
-- The method names that start processes and send messages
+Derive paths using these four categories:
 
-### Step 4 – Read the workers
+- **Happy path** — always present; the primary successful flow from start event to the successful end event
+- **Gateway branch** — one path per outgoing branch of each exclusive or inclusive gateway that is not already covered
+  by the happy path; note the condition that triggers the branch and the resulting end event
+- **Boundary event** — one path per boundary event regardless of type (timer, message, error, escalation) and
+  regardless of whether it is interrupting or non-interrupting; note the attached activity and where the flow goes
+- **Event subprocess** — one path per event subprocess; note the triggering event type and the subprocess end event
 
-Locate all worker files in `adapter/inbound/zeebe/`. For each worker, identify:
+### Step 3 – Ask user which paths to test
 
-- The injected use-case interface (constructor parameter) → needs a `@MockkBean`
-- The `@Variable` parameters used
+Present the paths derived in Step 2 to the user using `AskUserQuestion` with `multiSelect: true`.
 
-### Step 5 – Locate `TestProcessEngineConfiguration`
+- Always list "Happy path" first and mark it as "(Recommended)" in its description
+- For each other path, include the dominant BPMN element names and the test technique in the description so the user
+  understands what will be generated
+- Store the selected paths — only generate test methods for these in Step 6
 
-Search for `TestProcessEngineConfiguration.kt` in the test source tree to confirm its fully-qualified class name
-for the `@Import` annotation.
+### Step 4 – Read supporting files
 
-### Step 6 – Identify process paths
+#### 4.1 – ProcessApi
 
-Enumerate all distinct paths through the process:
+- Search for `adapter/process/*ProcessApi.kt` in the same module as the BPMN file.
+- If not found, use `AskUserQuestion` to ask the user to provide the path, then read it.
+- Extract: `PROCESS_ID`, and all constants under `TaskTypes`, `Messages`, `Variables`, `Elements`.
 
-1. **Happy path** — the primary successful flow
-2. **Timer paths** — one per timer boundary event or intermediate timer catch event (time is advanced via
-   `processTestContext.increaseTime(...)`)
-3. **Message paths** — branches triggered by different correlation messages
-4. **Error/compensation paths** — boundary events, abort flows, etc.
+#### 4.2 – Process adapter
 
-For mid-process scenarios (e.g. testing a path that starts mid-flow), use `camundaClient.newCreateInstanceCommand()`
-with `.startBeforeElement(elementId)` and explicit variables — see the `startProcessAt` helper pattern below.
+- Search for `adapter/outbound/zeebe/*ProcessAdapter.kt` in the same module.
+- If not found, use `AskUserQuestion` to ask the user to provide the path, then read it.
+- Note the class name and all public methods (start-process and message-send methods).
 
-### Step 7 – Generate the test class
+#### 4.3 – Workers
 
-Test class structure:
+- Search for all files matching `adapter/inbound/zeebe/*Worker.kt` in the same module.
+- If none are found, that is valid — note the absence and continue.
+- For each worker found, note the injected use-case interface (constructor parameter) and any `@Variable` parameters.
 
-```kotlin
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@CamundaSpringProcessTest
-@Import(TestProcessEngineConfiguration::class)
-class <ProcessName>ProcessTest {
+#### 4.4 – TestProcessEngineConfiguration
 
-    @Autowired
-    private lateinit var camundaClient: CamundaClient
+- Search for `TestProcessEngineConfiguration.kt` in the test source tree of the module.
+- If not found, stop immediately and inform the user: "TestProcessEngineConfiguration could not be found. This class is required for the `@Import` annotation. Please ensure `common-zeebe-test` is on the test classpath and correct the setup before proceeding."
+- If found, note its fully qualified class name for the `@Import` annotation.
 
-    @Autowired
-    private lateinit var processTestContext: CamundaProcessTestContext
-
-    @Autowired
-    private lateinit var processPort: <ProcessAdapter>
-
-    // One @MockkBean per use-case interface injected by any worker
-    @MockkBean
-    private lateinit var someUseCase: SomeUseCase
-
-    @BeforeEach
-    fun setup() {
-        every { someUseCase.method(any()) } just Runs
-        // ... repeat for every mocked use case
-    }
-
-    @Test
-    fun `happy path - <description>`() {
-        // given
-        val subscriptionId = UUID.fromString("...")
-
-        // when
-        val instanceKey = processPort.startMethod(...)
-        processPort.sendMessageMethod(...)     // if applicable
-
-        // then
-        val instance = ProcessInstanceSelectors.byKey(instanceKey)
-        CamundaAssert.assertThatProcessInstance(instance).isCompleted()
-        verify { someUseCase.method(...) }
-        verify { otherUseCase wasNot Called }
-        confirmVerified(someUseCase, otherUseCase)
-    }
-
-    @Test
-    fun `timer path - <description>`() {
-        // given
-        val subscriptionId = UUID.fromString("...")
-        val instance = startProcessAt(
-            elementId = ProcessApi.Elements.SOME_ELEMENT,
-            subscriptionId = SubscriptionId(subscriptionId)
-        )
-
-        // when
-        processTestContext.increaseTime(Duration.ofSeconds(<timer-seconds>))
-
-        // then
-        CamundaAssert.assertThatProcessInstance(instance)
-            .hasCompletedElement(ProcessApi.Elements.TIMER_TASK_ELEMENT, 1)
-        CamundaAssert.assertThatProcessInstance(instance).isCompleted()
-        verify { someUseCase.method(...) }
-        confirmVerified(someUseCase, otherUseCase)
-    }
-
-    // Private helper for mid-process scenarios
-    private fun startProcessAt(elementId: String, subscriptionId: SubscriptionId): ProcessInstanceEvent {
-        val variables = mapOf(ProcessApi.Variables.SUBSCRIPTION_ID to subscriptionId.value.toString())
-        return camundaClient.newCreateInstanceCommand()
-            .bpmnProcessId(ProcessApi.PROCESS_ID)
-            .latestVersion()
-            .variables(variables)
-            .startBeforeElement(elementId)
-            .send()
-            .join()
-    }
-}
-```
-
-Adapt the template: remove `startProcessAt` if not needed, add timer tests only when the BPMN has timers, etc.
-
-### Step 8 – Determine the test file location
+### Step 5 – Determine the test file location
 
 Mirror the source layout:
 
-- Source module root: derive from the BPMN file path (e.g. `services/example-service/`)
+- Module root: derive from the BPMN file path (e.g. `services/example-service/`)
 - Test file: `src/test/kotlin/<package-path>/<ProcessName>ProcessTest.kt`
 - Package: same as the process adapter package (e.g. `io.miragon.example.adapter.process`)
 
-Skip generating if a file with that name already exists.
+If a file with that name already exists, switch to **update mode**: add only the new test methods for the paths the
+user selected in Step 3, leaving existing methods untouched.
 
-### Step 9 – Write the test file
+### Step 6 – Generate the test class
 
-Write the generated class to the determined location.
+Use `references/process-test-template.kt` as your starting point. Generate **only** the test methods for the paths
+selected in Step 3. Apply these rules when adapting the template:
 
-### Step 10 – Verify
+- **Happy path** → use the full-start variant; call `processPort.<startMethod>` and optionally
+  `processPort.<sendMessageMethod>` if the happy path includes a message
+- **Message path** → include the message-send section; use a distinct UUID to avoid correlation conflicts with other
+  tests
+- **Timer path** → include `processTestContext.increaseTime(Duration.of...)` with the correct duration; start at
+  the appropriate element via `startProcessAt` if skipping earlier tasks is needed
+- **Mid-process / boundary event path** → use `startProcessAt` with the correct element ID from `ProcessApi.Elements`
+- **`startProcessAt` helper** → include the private helper only if at least one selected path uses it
+- **`camundaClient` and `processTestContext` fields** → include only when at least one selected path needs them
 
-Run the generated tests using an appropriate Gradle command. Derive the module from the file path:
+### Step 7 – Write the test file
+
+Write the generated class to the location determined in Step 5.
+
+### Step 8 – Verify
+
+Run the generated tests using the appropriate Gradle command. Derive the module path from the file location:
 
 ```
 ./gradlew :<module-path>:test --tests "*<ProcessName>ProcessTest*"
 ```
 
-### Step 11 – Report
+If tests fail, diagnose the root cause (missing mock setup, wrong element ID, incorrect timer duration) and fix
+before reporting.
 
-Report the created file path and a brief summary of which paths are covered by the generated tests.
+### Step 9 – Report
+
+Give a short report about which file you have created or updated,
+as well as how many test-cases were affected.
