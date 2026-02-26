@@ -64,5 +64,7 @@ object NewsletterSubscriptionProcessApi {
 
   object Variables {
     const val SUBSCRIPTION_ID: String = "subscriptionId"
+
+    const val WELCOME_MAIL_SENT: String = "welcomeMailSent"
   }
 }

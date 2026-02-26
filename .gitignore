@@ -11,5 +11,6 @@
 **/build/
 .DS_Store
 .kotlin/
+.claude/temp
 .claude/settings.local.json
 target

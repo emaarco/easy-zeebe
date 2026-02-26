@@ -2,96 +2,58 @@
 name: create-process-adapter
 argument-hint: "[<path-to-ProcessApi-or-BPMN-file>]"
 allowed-tools: Read, Write, Glob
-description: Scaffold or update a Zeebe process out-adapter. Accepts a ProcessApi file, a BPMN model, or a plain description. Use when the user wants to generate the outbound Zeebe adapter for a BPMN process.
+description: Create or update a Zeebe process out-adapter (outbound adapter) that calls the process engine via `startProcess`, `sendMessage`, and `sendSignal`. Use when the user asks to "create a process adapter", "generate the outbound Zeebe adapter", "wire up the process port", or "add a process out-adapter for a BPMN process". Accepts a ProcessApi file, a BPMN model, or a plain description; updates existing adapters by adding missing methods and correcting stale constant references.
 ---
 
 # Skill: create-process-adapter
 
-Generate or update a Zeebe process out-adapter (outbound adapter) for a BPMN process.
+Generates or updates one process out-adapter class in `adapter/outbound/zeebe/` — the **outbound adapter** where your
+application calls the process engine (start process, send message, trigger signal). See [
+`references/about.md`](references/about.md) for background.
 
-## What is a Process Adapter?
+Generated/updated methods cover:
 
-A process adapter is an **outbound adapter** in hexagonal terms. It lives at the boundary where *your application*
-reaches out to the process engine: your domain or application service calls the adapter to initiate or advance a
-process instance — start a process, send a correlation message, signal a boundary event, or query state.
-
-This is the mirror of a job worker:
-
-| Direction    | Pattern         | Who initiates the call?                     |
-|--------------|-----------------|---------------------------------------------|
-| **Inbound**  | Job Worker      | The engine calls your code (or you poll it) |
-| **Outbound** | Process Adapter | Your code calls the engine                  |
-
-The process adapter collects all outgoing engine operations for one process in a single class, so the rest of your
-codebase depends only on a clean port interface — never on the Camunda SDK directly.
-
-## Usage
-
-```
-/create-process-adapter [<path-to-ProcessApi-or-BPMN-file>]
-```
-
-Examples:
-
-```
-# From a ProcessApi file
-/create-process-adapter services/example-service/src/main/kotlin/io/miragon/example/adapter/process/NewsletterSubscriptionProcessApi.kt
-
-# From a BPMN file — skill finds the ProcessApi automatically
-/create-process-adapter services/example-service/src/main/resources/bpmn/newsletter.bpmn
-
-# No arguments — skill searches for ProcessApi files and asks which one to use
-/create-process-adapter
-```
-
-## What This Skill Creates or Updates
-
-- One process out-adapter class
-    - Located in `adapter/outbound/zeebe/`
-    - methods for `startProcess` (using `PROCESS_ID`)
-    - methods per message in `Messages.*` (using `sendMessage`)
-    - methods per signal in `Signals.*` (using `sendSignal`), if present
+- `startProcess` (using `PROCESS_ID`)
+- methods per message in `Messages.*` (using `sendMessage`)
+- methods per signal in `Signals.*` (using `sendSignal`), if present
 
 If the adapter file already exists, the skill compares it to the ProcessApi and adds any missing methods or corrects
 outdated constant references.
+
+## IMPORTANT
+
+- All string constants must come from the ProcessApi — never use raw string literals
+- `startProcess(processId = ...)` must reference `ProcessApi.PROCESS_ID`
+- `sendMessage(messageName = ...)` must reference `ProcessApi.Messages.CONSTANT`
+- always pass `correlationId` to correlate the message with the right process instance
+- Variable keys in `startProcess` must reference `ProcessApi.Variables.CONSTANT`
+- Method names come from the outbound port interface
+- Method signatures must accept **domain types** (not raw `String` or `UUID`). Inside the method body, extract
+  the primitive with `.value.toString()` (or `.value`) before passing to `engineApi`.
 
 ## Pattern
 
 ```kotlin
 @Component
-class NewsletterSubscriptionProcessAdapter(
-    private val engineApi: ProcessEngineApi
-) : NewsletterSubscriptionProcess {
+class YourProcessAdapter(private val engineApi: ProcessEngineApi) : YourProcess {
 
-    override fun submitForm(id: SubscriptionId): Long {
-        val variables = mapOf(Variables.SUBSCRIPTION_ID to id.value.toString())
-        return engineApi.startProcess(
-            processId = NewsletterSubscriptionProcessApi.PROCESS_ID,
-            variables = variables
+    override fun startSomething(id: YourId) {
+        engineApi.startProcess(
+            processId = ProcessApi.PROCESS_ID,
+            variables = mapOf("test" to id.value.toString())
         )
     }
 
-    override fun confirmSubscription(id: SubscriptionId) {
+    override fun sendSomething(id: YourId) {
         engineApi.sendMessage(
-            messageName = Messages.NEWSLETTER_SUBSCRIPTION_CONFIRMED,
-            correlationId = id.value.toString(),
+            messageName = ProcessApi.Messages.CONSTANT,
+            correlationId = id.value.toString()
         )
     }
 }
 ```
 
-## Key Rules
-
-- All string constants must come from the ProcessApi — never use raw string literals
-- `startProcess(processId = ...)` must reference `ProcessApi.PROCESS_ID`
-- `sendMessage(messageName = ...)` must reference `ProcessApi.Messages.CONSTANT`; always pass `correlationId` to
-  correlate the message with the right process instance
-- `sendSignal(signalName = ...)` must reference `ProcessApi.Signals.CONSTANT`
-- Variable keys in `startProcess` must reference `ProcessApi.Variables.CONSTANT`
-- Method names come from the outbound port interface (not from the ProcessApi); the generated scaffold uses
-  placeholder names that match the ProcessApi constant until the developer wires in the port
-- Method signatures must accept **domain types** (not raw `String` or `UUID`). Inside the method body, extract
-  the primitive with `.value.toString()` (or `.value`) before passing to `engineApi`.
+See `references/process-adapter-template.kt` for the full annotated example.
 
 ## Instructions
 
@@ -123,22 +85,18 @@ Check whether a file with that name already exists at the target location.
 
 **If the file does not exist — generate:**
 
-Follow the Pattern above. Concretely:
-
-- `@Component` class injecting `ProcessEngineApi`
-- One method that calls `engineApi.startProcess(processId = ProcessApiObject.PROCESS_ID, variables = ...)`, passing
-  `ProcessApiObject.Variables.*` keys for each variable; use a conventional placeholder method name (e.g.
-  `startProcess`). Method accepts domain types; extract `.value.toString()` for the variables map.
-- One method per `Messages.*` constant calling `engineApi.sendMessage(messageName = ProcessApiObject.Messages.CONSTANT,
-  correlationId = id.value.toString())`. Method accepts the relevant domain type as parameter.
-- One method per `Signals.*` constant calling `engineApi.sendSignal(signalName = ProcessApiObject.Signals.CONSTANT)`
-  (skip if no signals are defined)
+- Use `references/process-adapter-template.kt` as a starting point
+- Method signatures accept domain types;
+- extract `.value.toString()` for the variables map
+- Wire in the outbound port interface once one exists
 
 **If the file already exists — update:**
 
-Read the existing file. Compare each public method against the ProcessApi constants. Add methods for any `Messages.*`
-or `Signals.*` constants that are not yet represented. Correct any constant references that are stale or use raw
-strings. Preserve existing method bodies and any added behavior.
+Read the existing file. Compare each public method against the ProcessApi constants.
+
+Add methods for any `Messages.*` not yet represented.
+Correct any constant references that are stale or use raw strings.
+Preserve existing method bodies and any added behavior.
 
 ### Step 4 – Report
 
@@ -146,3 +104,6 @@ List each file created, updated, or skipped (if nothing changed) and remind the 
 
 1. Wire in the outbound port interface if one exists (add `: ProcessNameProcess` and `override` to each method)
 2. Run `/test-process-adapter` to generate unit tests for the adapter
+
+If anything is unclear — for example, multiple ProcessApi files are found or no outbound port interface exists — ask the
+user before generating any file.

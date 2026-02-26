@@ -1,42 +1,13 @@
 ---
 name: test-process-adapter
-description: Generate a unit test for a Zeebe process out-adapter following the project's mockk test patterns. Use when the user asks to write or generate tests for a process adapter.
 argument-hint: "<path-to-adapter-file>"
 allowed-tools: Read, Write, Glob, Bash(./gradlew *)
+description: Generate mockk-based unit tests for Zeebe process out-adapters covering `startProcess`, `sendMessage`, and `sendSignal` methods. Use when the user asks to "write tests for a process adapter", "test the outbound Zeebe adapter", or "generate unit tests for a process adapter".
 ---
 
 # Skill: test-process-adapter
 
 Generate a unit test for a Zeebe process out-adapter following the project's established test patterns.
-
-## What is a Process Adapter?
-
-A process adapter is an **outbound adapter** in hexagonal terms.
-It lives at the boundary where *your application*reaches out to the process engine:
-your domain or application service calls the adapter to initiate or advance a process instance —
-start a process, send a correlation message, or query state.
-
-This is the mirror of a job worker:
-
-| Direction    | Pattern         | Who initiates the call?                     |
-|--------------|-----------------|---------------------------------------------|
-| **Inbound**  | Job Worker      | The engine calls your code (or you poll it) |
-| **Outbound** | Process Adapter | Your code calls the engine                  |
-
-The process adapter collects all outgoing engine operations for one process in a single class,
-so the rest of your codebase depends only on a clean port interface — never on the Camunda SDK directly.
-
-## Usage
-
-```
-/test-process-adapter <path-to-adapter-file>
-```
-
-Example:
-
-```
-/test-process-adapter services/example-service/src/main/kotlin/io/miragon/example/adapter/outbound/zeebe/NewsletterSubscriptionProcessAdapter.kt
-```
 
 ## SDK Context
 
@@ -51,18 +22,42 @@ ask the user before proceeding how to handle it and whether to add it to the ski
 
 ## Reference Pattern
 
-See `NewsletterSubscriptionProcessAdapterTest.kt` for the canonical example. The structure is:
+```kotlin
+class YourProcessAdapterTest {
+    private val engineApi = mockk<ProcessEngineApi>()
+    private val underTest = YourProcessAdapter(engineApi = engineApi)
 
-- Mock `ProcessEngineApi` with `mockk`
-- Instantiate the adapter directly (no Spring context)
-- One `@Test` per public method:
-    - For `startProcess` calls: verify `processId` and `variables` using ProcessApi constants; assert the returned key
-    - For `sendMessage` calls: verify `messageName`, `correlationId`, and `variables` using ProcessApi constants
-- All string values (processId, messageName, variable keys) come from the ProcessApi object — never raw literals
-- End each test with `confirmVerified(engineApi)` to catch unexpected interactions
+    @Test
+    fun `starts process`() {
+        // given: engine stubbed to return a process instance key
+        every { engineApi.startProcess(any(), any()) } returns 42L
+        // when: the adapter initiates the process
+        val result = underTest.startSomething(id)
+        // then: engine called with the correct processId and variables
+        verify { engineApi.startProcess(ProcessApi.PROCESS_ID, mapOf(...)) }
+        assertThat(result).isEqualTo(42L)
+        confirmVerified(engineApi)
+    }
 
-## Key Rules
+    @Test
+    fun `sends message`() {
+        // given: engine stubbed for message correlation
+        every { engineApi.sendMessage(any(), any(), any()) } just Runs
+        // when: the adapter sends the message
+        underTest.sendSomething(id)
+        // then: engine called with the correct messageName and correlationId
+        verify { engineApi.sendMessage(ProcessApi.Messages.CONSTANT, id.value.toString(), emptyMap()) }
+        confirmVerified(engineApi)
+    }
+}
+```
 
+See `references/process-adapter-test-template.kt` for the full annotated example.
+
+## IMPORTANT
+
+- Structure each test with `// given: <what is set up>`, `// when: <the action>`, `// then: <what is verified>`
+  sections; omit the section comment when that phase is a single line
 - Use `io.mockk.*` for mocking `ProcessEngineApi`
 - Use `org.assertj.core.api.Assertions.assertThat` for return-value assertions
 - Use `confirmVerified(engineApi)` at the end of every test to catch unexpected calls
@@ -71,29 +66,38 @@ See `NewsletterSubscriptionProcessAdapterTest.kt` for the canonical example. The
 
 ## Instructions
 
-1. **Read and identify** — read the adapter file at `$ARGUMENTS` and extract:
-    - Adapter class name and the outbound port interface it implements (if any)
-    - The ProcessApi object imported (e.g. `NewsletterSubscriptionProcessApi`)
-    - Each public method: name, parameters, return type
-    - Which `ProcessEngineApi` methods are called (`startProcess`, `sendMessage`, etc.)
-    - Which ProcessApi constants are referenced (PROCESS_ID, Messages.*, Variables.*, etc.)
+### Step 1 – Read and identify
 
-   Then read the ProcessApi file to confirm the exact constant names and nested object structure.
+Read the adapter file at `$ARGUMENTS` and extract:
 
-2. **Locate the test file** — mirror `src/main/kotlin` → `src/test/kotlin`, same package path, append `Test` to the
-   class name. If the file already exists, open it and switch to fix mode. If not, proceed to generate a new file.
+- Adapter class name and the outbound port interface it implements (if any)
+- The ProcessApi object imported (e.g. `NewsletterSubscriptionProcessApi`)
+- Each public method: name, parameters, return type
+- Which `ProcessEngineApi` methods are called (`startProcess`, `sendMessage`, etc.)
+- Which ProcessApi constants are referenced (PROCESS_ID, Messages.*, Variables.*, etc.)
 
-3. **Determine required test cases** — one test per public adapter method. If a method has multiple code paths, list
-   them and ask for permission before writing more than one test for that method.
+Then read the ProcessApi file to confirm the exact constant names and nested object structure.
 
-4. **Generate or fix the test file**:
-    - Package declaration matching the adapter's package
-    - Imports: `io.mockk.*`, `org.assertj.core.api.Assertions.assertThat`, `org.junit.jupiter.api.Test`,
-      `ProcessEngineApi`, ProcessApi, domain types
-    - Mock `ProcessEngineApi`, instantiate the adapter directly
-    - Use ProcessApi constants for all string values — no raw string literals
-    - `assertThat` for return values; `verify { ... }` with named args; `confirmVerified(engineApi)` at end of each test
-    - Use fixed UUID strings (`123e4567-e89b-12d3-a456-426614174000`) for deterministic test data
+### Step 2 – Locate the test file
 
-5. **Write, run, and report** — write the file to the located path; run all tests in the class via an appropriate
-   Gradle command; report the created or updated file path and a brief summary.
+Mirror `src/main/kotlin` → `src/test/kotlin`, same package path, append `Test` to the class name.
+If the file already exists, open it and switch to fix mode. If not, proceed to generate a new file.
+
+### Step 3 – Determine required test cases
+
+One test per public adapter method.
+If a method has multiple code paths, list them and ask for
+permission before writing more than one test for that method.
+
+### Step 4 – Generate or fix the test file
+
+- Use `references/process-adapter-test-template.kt` as a starting point
+- All string constants from ProcessApi — no raw literals
+- Fixed UUID strings for deterministic test data
+- Use named parameters for parameters of method calls
+
+### Step 5 – Write, run, and report
+
+- Write the file to the located path;
+- Run all tests in the class via an appropriate Gradle command;
+- Report the created or updated file path and a brief summary.

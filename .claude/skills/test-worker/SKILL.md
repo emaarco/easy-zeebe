@@ -1,8 +1,8 @@
 ---
 name: test-worker
-description: Generate a unit test for a Zeebe @JobWorker class following the project's mockk test patterns. Use when the user asks to write or generate tests for a job worker.
 argument-hint: "<path-to-worker-file>"
 allowed-tools: Read, Write, Glob, Bash(./gradlew *)
+description: Generate a unit test for a Zeebe `@JobWorker` class using mockk (Kotlin) or Mockito (Java), without any Spring context or Camunda test runtime. Use when the user asks to "write tests for a job worker", "generate tests for a worker", or "test a @JobWorker".
 ---
 
 # Skill: test-worker
@@ -10,55 +10,59 @@ allowed-tools: Read, Write, Glob, Bash(./gradlew *)
 Generate a new unit test or update an existing one for a Zeebe job worker class.
 This skill follows the project's established test patterns.
 
-## What is a Job Worker?
+## IMPORTANT
 
-A job worker is an **inbound adapter** in hexagonal terms.
-It lives at the boundary where the process engine reaches into your application:
-Zeebe polls your worker for jobs and, when one is available, invokes the `handle` method.
-It's much like the engine making a request to your code to perform some work.
-
-The worker translates the Zeebe job (variables, job key) into a domain call on a use-case interface.
-After that it completes the job and returns control to the engine.
-
-## Usage
-
-```
-/test-worker <path-to-worker-file>
-```
-
-Example:
-
-```
-/test-worker services/example-service/src/main/kotlin/io/miragon/example/adapter/inbound/zeebe/SendWelcomeMailWorker.kt
-```
+- No Spring context, no Camunda test runtime in worker unit tests
+- Mirror the test to the package-path of the worker file
+- **Kotlin**: use `mockk` / `io.mockk.*`; always call `confirmVerified(useCase)` after every `verify` block
+- **Java**: use Mockito (`@ExtendWith(MockitoExtension.class)`, `@Mock`, `@InjectMocks`); call
+  `verifyNoMoreInteractions(useCase)` after every `verify`
+- By default, write only **one** test case; ask for permission before writing more
+- Structure each test with `// Given`, `// When`, `// Then` section comments; omit the comment when that phase is a
+  single line
 
 ## Pattern
 
-Worker unit tests follow this pattern
-(see `AbortRegistrationWorkerTest.kt` and `SendWelcomeMailWorkerTest.kt`):
-
 ```kotlin
-class WorkerNameTest {
-
-    private val useCase = mockk<UseCaseInterface>()
-    private val underTest = WorkerName(useCase)
+class YourWorkerTest {
+    private val useCase = mockk<YourUseCase>()
+    private val underTest = YourWorker(useCase)
 
     @Test
     fun `should perform action when job is received`() {
-
-        // Given: a subscription and mocked service-calls
-        val subscriptionId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
-        every { useCase.method(SubscriptionId(subscriptionId)) } just Runs
-
-        // When: the worker handles the job
-        underTest.handle(subscriptionId)
-
-        // Then: the use case is called with the correct subscription ID
-        verify(exactly = 1) { useCase.method(SubscriptionId(subscriptionId)) }
+        // Given
+        val variableId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+        every { useCase.method(DomainType(variableId)) } just Runs
+        // When
+        underTest.handle(variableId)
+        // Then
+        verify(exactly = 1) { useCase.method(DomainType(variableId)) }
         confirmVerified(useCase)
     }
 }
 ```
+
+### Output-variable worker
+
+Use this variant when `handle` returns `Map<String, Any>`.
+Capture the result and assert the map entries:
+
+```kotlin
+    @Test
+fun `should return output variable when job is received`() {
+    // Given
+    val variableId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+    every { useCase.method(DomainType(variableId)) } returns expectedValue
+    // When
+    val result = underTest.handle(variableId)
+    // Then
+    verify(exactly = 1) { useCase.method(DomainType(variableId)) }
+    confirmVerified(useCase)
+    assertThat(result).containsExactly(entry(Variables.CONSTANT, expectedValue))
+}
+```
+
+See `references/worker-test-template.kt` for the full annotated example.
 
 ## SDK Context
 
@@ -73,41 +77,62 @@ Worker unit tests use `io.mockk` only — no Camunda test runtime is needed.
 If you encounter imports or usage patterns not covered by this skill,
 ask the user before proceeding how to handle it and whether to add it to the skill.
 
-## Key Rules
-
-- Use `mockk` / `io.mockk.*` for mocking (no Spring context required)
-- The class under test is instantiated directly, not via Spring
-- Use `confirmVerified(useCase)` to catch unexpected interactions
-- One test method per distinct happy-path behavior
-- If the worker has no return value, stub with `just Runs`; if it returns a value, use `returns <value>`
-- By default, write only one test case; if multiple are needed, ask for permission first
-
 ## Instructions
 
-1. **Read and identify** — read the worker file at `$ARGUMENTS` and extract:
-    - Worker class name and the use-case interface injected via constructor
-    - Variable injection style:
-        - **`@Variable param: Type`** — injects one variable by name; the test calls `handle(value)` with the raw value
-        - **`@VariableAsType variables: MyVarsClass`** — injects all variables as a typed object; the test instantiates
-          the class and passes it, e.g. `handle(MyVarsClass(subscriptionId = subscriptionId))`
-    - The `@JobWorker`-annotated `handle` method signature
-    - The use-case method called inside `handle` and its parameter types
-    - Domain wrapper types used (e.g. `SubscriptionId`)
+### Step 1 – Read and identify
 
-2. **Locate the test file** — mirror `src/main/kotlin` → `src/test/kotlin`, same package path, append `Test` to the
-   class name. If the file already exists, open it and switch to fix mode. If not, proceed to generate a new file.
+Read the worker file at `$ARGUMENTS` and extract:
 
-3. **Determine required test cases** — normally one test per distinct happy-path behavior. If the worker calls the
-   use case conditionally or has multiple code paths, list the cases and ask for permission before writing more than
-   one.
+- **Language**: derive from the file extension — `.kt` → Kotlin (mockk), `.java` → Java (Mockito)
+- Worker class name & use-case to be called by the worker
+- Variable injection style:
+    - **`@Variable param: Type`** — injects one variable by name; the test calls `handle(value)` with the raw value
+    - **`@VariableAsType variables: MyVarsClass`** — injects all variables as a typed object; the test instantiates
+      the class and passes it, e.g. `handle(MyVarsClass(subscriptionId = subscriptionId))`
+- The `@JobWorker`-annotated `handle` method signature
+- The **return type** of `handle`:
+    - `Unit` (or no explicit return type) → **void worker**: no result assertion needed
+    - `Map<String, Any>` → **output-variable worker**: capture `val result = underTest.handle(...)` and assert the
+      returned map in the Then block
+- The use-case method called inside `handle` and its parameter types
+- Domain wrapper types used (e.g. `SubscriptionId`)
+- Error Handling: If the file at `$ARGUMENTS` cannot be read, stop immediately and ask the user for the correct path.
 
-4. **Generate or fix the test file**:
-    - Package declaration matching the worker's package
-    - Imports: `io.mockk.*`, `org.junit.jupiter.api.Test`, domain types
-    - Instantiate the worker directly (no Spring context)
-    - For each test: stub use case with exact values → call `handle(...)` → `verify(exactly = 1)` with exact values →
-      `confirmVerified(useCase)`
-    - Use fixed UUID strings (`123e4567-e89b-12d3-a456-426614174000`) for deterministic test data
+### Step 2 – Locate the use-case interface
 
-5. **Write, run, and report** — write the file to the located path; run all tests in the class via an appropriate
-   Gradle command; report the created or updated file path and a brief summary.
+Every worker must delegate to a use-case:
+
+- Derive the interface name from the constructor parameter identified in Step 1
+- Glob for `**/<InterfaceName>.kt` (Kotlin) or `**/<InterfaceName>.java` (Java) under the `src/main` source tree
+- If found, read it to confirm the method signature matches what Step 1 identified
+- If not found, search more broadly (`**/*UseCase.kt` / `**/*UseCase.java`) and present the user with a numbered
+  list of candidates
+- If no use-case can be found at all, **stop** and ask the user to provide the path manually before continuing
+
+### Step 3 – Locate the test file
+
+- Mirror the path: replace `src/main/kotlin` → `src/test/kotlin` (Kotlin) or `src/main/java` → `src/test/java` (
+  Java), keeping the same package structure
+- Append `Test` to the class name (e.g. `FooWorker` → `FooWorkerTest`)
+- If the file already exists, open it and switch to fix mode; if not, proceed to generate a new file
+
+### Step 4 – Determine required test cases
+
+Normally one test per distinct happy-path behavior.
+
+- If the worker calls the use case conditionally or has multiple code paths, list the cases and ask for permission
+  before writing more than one.
+
+### Step 5 – Generate or fix the test file
+
+- Pick the reference template based on the language detected in Step 1
+- **Kotlin** → `references/worker-test-template.kt` (mockk)
+- **Java** → `references/worker-test-template.java` (Mockito)
+- Write the test case(s) based on the template
+- In both cases, don't use tests with spring-context and use fixed uuid strings
+
+### Step 6 – Write, run, and report
+
+- Write the test file to the located path
+- Run all tests in the class via an appropriate Gradle command
+- Report the created or updated file path and a brief summary
