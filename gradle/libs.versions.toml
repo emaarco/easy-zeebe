@@ -17,7 +17,7 @@ web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref
 devtools = { module = "org.springframework.boot:spring-boot-devtools", version.ref = "spring_version" }
 jpa = { module = 'org.springframework.boot:spring-boot-starter-data-jpa', version.ref = 'spring_version' }
 postgres = { module = 'org.postgresql:postgresql', version.ref = 'postgres_version' }
-zeebeSdk = { module = "io.camunda:camunda-spring-boot-starter", version.ref = "zeebe_version" }
+zeebeSdk = { module = "io.camunda:camunda-spring-boot-4-starter", version.ref = "zeebe_version" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin_version" }
 kotlin_logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin_logging_version" }
 
@@ -25,6 +25,8 @@ kotlin_logging = { module = "io.github.microutils:kotlin-logging", version.ref =
 zeebeProcessTest = { module = "io.camunda:camunda-process-test-spring", version.ref = "zeebe_version" }
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist_version" }
 spring_test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring_version" }
+spring_webTest = { module = "org.springframework.boot:spring-boot-webmvc-test", version.ref = "spring_version" }
+spring_dataJpaTest = { module = "org.springframework.boot:spring-boot-starter-data-jpa-test", version.ref = "spring_version" }
 mockito = { module = "org.mockito:mockito-inline", version.ref = "mockito_version" }
 kotlin_mockito = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "kotlin_mockito_version" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk_version" }
@@ -34,7 +36,7 @@ testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "
 [bundles]
 defaultService = ["kotlin-reflect", "kotlin_logging", "devtools", "web", "zeebeSdk"]
 database = ["jpa", "postgres"]
-test = ["spring_test", "mockito", "mockk", "spring_mockk", "kotlin_mockito", "testcontainers"]
+test = ["spring_test", "spring_webTest", "spring_dataJpaTest", "mockito", "mockk", "spring_mockk", "kotlin_mockito", "testcontainers"]
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin_version" }
