@@ -181,11 +181,21 @@ Learn more in the [Claude Code Skills docs](https://code.claude.com/docs/en/skil
 | `/test-worker`            | Generate a unit test for a Zeebe job worker                             |
 | `/test-process-adapter`   | Generate a unit test for a Zeebe process out-adapter                    |
 | `/test-process`           | Generate process integration tests                                      |
-| `/create-adr`             | Write a new Architecture Decision Record in `docs/adr/`                 |
 
 **Supporting skills** — generic hexagonal-architecture helpers included as inspiration:
-`/create-ticket`, `/create-rest-controller`, `/create-persistence-adapter`,
+`/create-adr`, `/create-ticket`, `/create-rest-controller`, `/create-persistence-adapter`,
 `/test-rest-adapter`, `/test-application-service`, `/test-persistence-adapter`
+
+For the full skill reference, see [`docs/skills.md`](docs/skills.md).
+Install skills in your own project via [`npx skills`](https://www.npmjs.com/package/skills):
+
+```bash
+# Install all skills at once
+npx skills add https://github.com/miragon/easy-zeebe
+
+# Or pick individual skills
+npx skills add https://github.com/miragon/easy-zeebe/tree/main/.claude/skills/create-worker
+```
 
 ### 🔍 Subagents
 
