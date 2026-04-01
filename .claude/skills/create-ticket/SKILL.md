@@ -16,6 +16,7 @@ Create or update a GitHub issue for this repository
 - Never call the api directly.
 - If gh-cli not available, abort the execution and ask the user to install it. The user must restart the skill then
 - When any gh call fails, ask the user what to do (repeat, stop, do something else)
+- **Never hard-wrap body text.** Every paragraph and list item must be a single unbroken line. Do NOT insert line breaks in the middle of a sentence to stay within 80 characters. GitHub renders markdown — let it wrap.
 
 ## Instructions
 
