@@ -16,6 +16,7 @@ Create or update a GitHub issue for this repository
 - Never call the api directly.
 - If gh-cli not available, abort the execution and ask the user to install it. The user must restart the skill then
 - When any gh call fails, ask the user what to do (repeat, stop, do something else)
+- **Never hard-wrap body text.** Every paragraph and list item must be a single unbroken line. Do NOT insert line breaks in the middle of a sentence to stay within 80 characters. GitHub renders markdown — let it wrap.
 
 ## Instructions
 
@@ -44,7 +45,7 @@ For an issue that needs to be updated
 ### Step 3 – Research (optional)
 
 If the issue involves a specific library, framework version, API, or configuration that you are not
-fully certain about, ask the user:
+fully certain about, use `AskUserQuestion` to ask:
 *"Should I search online for [topic] to get accurate details (e.g. exact property names,
 migration guides) before drafting?"*
 If yes, use `WebSearch` / `WebFetch` to collect relevant facts, then incorporate them into the
@@ -54,10 +55,12 @@ draft. Skip this step if you already have sufficient knowledge.
 
 Draft the issue using the matching template from the Templates section below.
 
-### Step 5 – Show and confirm
+### Step 5 – Confirm with AskUserQuestion
 
-Present the full draft (create) or the current state + proposed changes (update) and ask:
-*"Proceed? (yes / edit / cancel)"*. Apply edits and show again if requested.
+Use `AskUserQuestion` to present the full draft and ask the user to confirm before proceeding.
+Show the title, label, and full body in the question text.
+Offer three options: **proceed**, **edit** (ask what to change), or **cancel**.
+If the user requests edits, apply them and ask again via `AskUserQuestion` until confirmed or cancelled.
 
 ### Step 6 – Create or update
 
