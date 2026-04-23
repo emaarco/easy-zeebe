@@ -93,15 +93,11 @@ class MiraveloMembershipProcessTest {
     @Test
     fun `rejection path - no capacity available, rejection mail is sent`() {
 
-        // given
+        // given - start directly at rejection task (gateway already routed; claim is not re-executed)
         val membershipId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b87")
-        every { claimMembershipUseCase.claim(MembershipId(membershipId)) } returns false
-
-        // when - start process with no capacity
         val instance = startProcessAt(
-            elementId = Elements.SERVICE_TASK_CLAIM_MEMBERSHIP,
+            elementId = Elements.SERVICE_TASK_SEND_REJECTION_MAIL,
             membershipId = MembershipId(membershipId),
-            extraVariables = mapOf(Variables.HAS_EMPTY_SPOTS to false)
         )
 
         // then - rejection mail is sent and process ends rejected
@@ -109,6 +105,7 @@ class MiraveloMembershipProcessTest {
             .hasCompletedElement(Elements.SERVICE_TASK_SEND_REJECTION_MAIL, 1)
         CamundaAssert.assertThatProcessInstance(instance).isCompleted()
         verify { sendRejectionMailUseCase.sendRejectionMail(MembershipId(membershipId)) }
+        verify { claimMembershipUseCase wasNot Called }
         verify { sendConfirmationMailUseCase wasNot Called }
         verify { sendWelcomeMailUseCase wasNot Called }
         confirmVerified(claimMembershipUseCase, sendConfirmationMailUseCase, sendWelcomeMailUseCase, sendRejectionMailUseCase)
@@ -117,10 +114,8 @@ class MiraveloMembershipProcessTest {
     private fun startProcessAt(
         elementId: String,
         membershipId: MembershipId,
-        extraVariables: Map<String, Any> = emptyMap(),
     ): ProcessInstanceEvent {
-        val variables = mutableMapOf<String, Any>(Variables.MEMBERSHIP_ID to membershipId.value.toString())
-        variables.putAll(extraVariables)
+        val variables = mapOf(Variables.MEMBERSHIP_ID to membershipId.value.toString())
         return camundaClient.newCreateInstanceCommand()
             .bpmnProcessId(MiraveloMembershipProcessApi.PROCESS_ID)
             .latestVersion()
