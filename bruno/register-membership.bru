@@ -1,0 +1,23 @@
+meta {
+  name: Register for MiraVelo Membership
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8081/api/memberships
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "john.doe@miravelo.com",
+    "name": "John Doe",
+    "age": 28
+  }
+}
+
+vars:post-response {
+  membershipId: res.body.membershipId
+}

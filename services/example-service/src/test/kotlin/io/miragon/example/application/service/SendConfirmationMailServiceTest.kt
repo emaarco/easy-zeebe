@@ -1,8 +1,8 @@
 package io.miragon.example.application.service
 
-import io.miragon.example.application.port.outbound.NewsletterSubscriptionRepository
-import io.miragon.example.domain.SubscriptionId
-import io.miragon.example.domain.testNewsletterSubscription
+import io.miragon.example.application.port.outbound.MembershipRepository
+import io.miragon.example.domain.MembershipId
+import io.miragon.example.domain.testMembership
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
@@ -12,20 +12,20 @@ import java.util.*
 
 class SendConfirmationMailServiceTest {
 
-    private val subscriptionRepository = mockk<NewsletterSubscriptionRepository>()
-    private val underTest = SendConfirmationMailService(repository = subscriptionRepository)
+    private val membershipRepository = mockk<MembershipRepository>()
+    private val underTest = SendConfirmationMailService(repository = membershipRepository)
 
     @Test
     fun `send confirmation mail`() {
 
-        val subscriptionId = SubscriptionId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
-        val subscription = testNewsletterSubscription(id = subscriptionId)
+        val membershipId = MembershipId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
+        val membership = testMembership(id = membershipId)
 
-        every { subscriptionRepository.find(subscriptionId) } returns subscription
+        every { membershipRepository.find(membershipId) } returns membership
 
-        underTest.sendConfirmationMail(subscriptionId)
+        underTest.sendConfirmationMail(membershipId)
 
-        verify { subscriptionRepository.find(subscriptionId) }
-        confirmVerified(subscriptionRepository)
+        verify { membershipRepository.find(membershipId) }
+        confirmVerified(membershipRepository)
     }
 }
