@@ -1,4 +1,4 @@
-> 🥨 **easy-zeebe is a template — clone it, learn from it, adapt it.**
+> 🚲 **easy-zeebe is a template — clone it, learn from it, adapt it.**
 > It shows how to orchestrate business processes with Zeebe and Spring Boot while applying the practices
 > that keep automation projects clean, testable, and maintainable as they grow.
 
@@ -21,8 +21,28 @@ a curated collection of practices and patterns you can adopt in your own project
 
 ## 💡 Automation in Action
 
-This repository implements a **MiraVelo Inner Circle membership process** —
-a realistic workflow covering service tasks, message correlation, a capacity gateway, and two end states:
+**Strategy meeting. Friday afternoon. Someone brought oat milk flat whites.**
+
+[Miravelo](https://github.com/Miragon) — a lifestyle online shop for people in the quarterlife crisis,
+selling gravel bikes for weekends that matter and road bikes for those who want to feel the asphalt
+under their tires — has a plan.
+
+They're launching the **MiraVelo Inner Circle**: a limited, exclusive membership for true fans of the brand.
+Gravel bike in the basement, road bike on the wall — you know who they mean.
+
+One thousand spots. That's the capacity. Why one thousand?
+Because scarcity creates value. Because FOMO is a business model.
+Because someone read a book about luxury brands and now inserts "Premium Positioning" into every sentence.
+
+> *"We're not exclusive because we're good. We're exclusive because we only have 1000 spots
+> and the counter in the database is set to 1000."*
+> — Honest comment from Sprint Planning
+
+From a process perspective, this means a **gateway** — the merciless bouncer in the process flow.
+Got a spot? Congratulations, move on: confirmation mail, member confirms, welcome mail.
+No spot? Rejection mail. No appeal. The gateway decides.
+
+This repository implements exactly that membership process as a clean, testable Zeebe + Spring Boot service:
 
 ![MiraVelo Membership Process](assets/img.png)
 
