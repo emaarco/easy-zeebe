@@ -46,8 +46,8 @@ the domain has no external dependencies.
 
 ### Positive
 
-- Each layer can be tested in isolation using mocks for the adjacent ports (see `AbortRegistrationWorkerTest.kt` and
-  `NewsletterSubscriptionProcessAdapterTest.kt`).
+- Each layer can be tested in isolation using mocks for the adjacent ports (see `SendRejectionMailWorkerTest.kt` and
+  `MembershipProcessAdapterTest.kt`).
 - Adding a new inbound channel (e.g. a Kafka consumer) requires creating a new inbound adapter only; application and
   domain code remain untouched.
 - The skills `/automate-process-hexagonal` and `/test-worker` can rely on a predictable package structure when

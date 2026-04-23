@@ -2,6 +2,6 @@ package io.miragon.example.application.port.inbound
 
 import io.miragon.example.domain.MembershipId
 
-interface SendConfirmationMailUseCase {
-    fun sendConfirmationMail(membershipId: MembershipId)
+interface ConfirmMembershipUseCase {
+    fun confirm(membershipId: MembershipId)
 }

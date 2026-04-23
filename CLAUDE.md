@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Easy Zeebe is a Spring Boot-based example project demonstrating Zeebe process engine integration.
 It consists of three Gradle modules and a React frontend:
 
-- **example-service**: The main application with newsletter subscription process implementation
+- **example-service**: The main application with MiraVelo Inner Circle membership process implementation
 - **common-zeebe**: Shared Zeebe integration utilities and configuration
 - **common-zeebe-test**: Testing utilities for Zeebe process testing
 
@@ -134,10 +134,10 @@ Prefer running tests combined, then individual, when you need to test multiple f
 
 ## Key Files
 
-- `services/example-service/src/main/resources/bpmn/newsletter.bpmn`: Main process definition
+- `services/example-service/src/main/resources/bpmn/membership.bpmn`: Main process definition
 - `services/example-service/src/main/kotlin/io/miragon/example/ExampleApplication.kt`: Application entry point
 - `services/common-zeebe/src/main/kotlin/io/miragon/common/zeebe/engine/ProcessEngineApi.kt`: Core Zeebe API
-- `frontend/src/App.tsx`: Main React frontend component with newsletter subscription form
+- `frontend/src/App.tsx`: Main React frontend component with MiraVelo membership registration form
 - `frontend/src/services/api.ts`: API client for backend communication
 
 ## Working with GitHub
@@ -171,4 +171,4 @@ with restricted tool access and are invoked automatically by Claude when relevan
 
 | Subagent         | When to use                                                                                                                                              |
 |------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `review-process` | Review a BPMN model and its glue-code for consistency. Ask: "review the newsletter process" or "use the review-process subagent to audit the newsletter" |
+| `review-process` | Review a BPMN model and its glue-code for consistency. Ask: "review the membership process" or "use the review-process subagent to audit the miravelo process" |

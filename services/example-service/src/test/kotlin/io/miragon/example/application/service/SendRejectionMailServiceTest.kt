@@ -10,20 +10,20 @@ import io.mockk.verify
 import org.junit.jupiter.api.Test
 import java.util.*
 
-class SendWelcomeMailServiceTest {
+class SendRejectionMailServiceTest {
 
     private val membershipRepository = mockk<MembershipRepository>()
-    private val underTest = SendWelcomeMailService(repository = membershipRepository)
+    private val underTest = SendRejectionMailService(repository = membershipRepository)
 
     @Test
-    fun `send welcome mail`() {
+    fun `send rejection mail`() {
 
         val membershipId = MembershipId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
         val membership = testMembership(id = membershipId)
 
         every { membershipRepository.find(membershipId) } returns membership
 
-        underTest.sendWelcomeMail(membershipId)
+        underTest.sendRejectionMail(membershipId)
 
         verify { membershipRepository.find(membershipId) }
         confirmVerified(membershipRepository)

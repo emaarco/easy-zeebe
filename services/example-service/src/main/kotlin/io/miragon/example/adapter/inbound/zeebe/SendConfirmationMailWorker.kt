@@ -1,10 +1,10 @@
 package io.miragon.example.adapter.inbound.zeebe
 
-import io.miragon.example.adapter.process.NewsletterSubscriptionProcessApi.TaskTypes
-import io.miragon.example.application.port.inbound.SendConfirmationMailUseCase
-import io.miragon.example.domain.SubscriptionId
 import io.camunda.client.annotation.JobWorker
 import io.camunda.client.annotation.Variable
+import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.TaskTypes
+import io.miragon.example.application.port.inbound.SendConfirmationMailUseCase
+import io.miragon.example.domain.MembershipId
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.util.*
@@ -16,9 +16,9 @@ class SendConfirmationMailWorker(
 
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = TaskTypes.NEWSLETTER_SEND_CONFIRMATION_MAIL)
-    fun handle(@Variable subscriptionId: UUID) {
-        log.debug { "Received job to send confirmation mail for subscriptionId: $subscriptionId" }
-        useCase.sendConfirmationMail(SubscriptionId(subscriptionId))
+    @JobWorker(type = TaskTypes.MIRAVELO_SEND_CONFIRMATION_MAIL)
+    fun handle(@Variable membershipId: UUID) {
+        log.debug { "Received job to send confirmation mail for membershipId: $membershipId" }
+        useCase.sendConfirmationMail(MembershipId(membershipId))
     }
 }

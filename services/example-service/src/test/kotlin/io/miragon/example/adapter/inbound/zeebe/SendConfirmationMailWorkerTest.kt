@@ -1,7 +1,7 @@
 package io.miragon.example.adapter.inbound.zeebe
 
 import io.miragon.example.application.port.inbound.SendConfirmationMailUseCase
-import io.miragon.example.domain.SubscriptionId
+import io.miragon.example.domain.MembershipId
 import io.mockk.Runs
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -19,15 +19,15 @@ class SendConfirmationMailWorkerTest {
     @Test
     fun `should send confirmation mail when job is received`() {
 
-        // Given: a subscription and mocked service-calls
-        val subscriptionId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
-        every { useCase.sendConfirmationMail(SubscriptionId(subscriptionId)) } just Runs
+        // Given: a membership and mocked service-calls
+        val membershipId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+        every { useCase.sendConfirmationMail(MembershipId(membershipId)) } just Runs
 
         // When: the worker handles the job
-        underTest.handle(subscriptionId)
+        underTest.handle(membershipId)
 
-        // Then: the use case is called with the correct subscription ID
-        verify(exactly = 1) { useCase.sendConfirmationMail(SubscriptionId(subscriptionId)) }
+        // Then: the use case is called with the correct membership ID
+        verify(exactly = 1) { useCase.sendConfirmationMail(MembershipId(membershipId)) }
         confirmVerified(useCase)
     }
 }
