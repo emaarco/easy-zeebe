@@ -44,7 +44,7 @@ No spot? Rejection mail. No appeal. The gateway decides.
 
 This repository implements exactly that membership process as a clean, testable Zeebe + Spring Boot service:
 
-![MiraVelo Membership Process](assets/img.png)
+![MiraVelo Membership Process](assets/membership.svg)
 
 ## 🔧 Getting Started
 
