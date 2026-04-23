@@ -21,15 +21,17 @@ class RevokeMembershipRequestServiceTest {
     @Test
     fun `revoke membership request persists declined status`() {
 
+        // given: a pending membership in the repository
         val membershipId = MembershipId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
         val membership = testMembership(id = membershipId)
         val declined = membership.declineMembership()
-
         every { membershipRepository.find(membershipId) } returns membership
         every { membershipRepository.save(declined) } just Runs
 
+        // when: the use case is invoked
         underTest.revokeMembershipRequest(membershipId)
 
+        // then: the membership is loaded and persisted with DECLINED status
         verify { membershipRepository.find(membershipId) }
         verify { membershipRepository.save(match { it.status == MembershipStatus.DECLINED }) }
         confirmVerified(membershipRepository)

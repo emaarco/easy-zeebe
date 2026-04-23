@@ -9,6 +9,8 @@ and various REST endpoints to interact with it.
 
 ## 🧩 Process overview
 
+![MiraVelo Membership Process](../../assets/membership.svg)
+
 The `miravelo-membership` process is triggered by publishing the `miravelo.membershipRequested`
 message (the `POST /api/memberships` endpoint does this via the process adapter).
 Key steps:

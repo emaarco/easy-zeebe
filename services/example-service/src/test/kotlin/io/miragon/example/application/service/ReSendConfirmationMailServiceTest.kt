@@ -18,13 +18,15 @@ class ReSendConfirmationMailServiceTest {
     @Test
     fun `re-send confirmation mail`() {
 
+        // given: a persisted membership
         val membershipId = MembershipId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
         val membership = testMembership(id = membershipId)
-
         every { membershipRepository.find(membershipId) } returns membership
 
+        // when: the use case is invoked
         underTest.reSendConfirmationMail(membershipId)
 
+        // then: the membership is loaded so the reminder can target the right address
         verify { membershipRepository.find(membershipId) }
         confirmVerified(membershipRepository)
     }

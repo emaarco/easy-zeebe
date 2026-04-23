@@ -26,15 +26,17 @@ class RejectConfirmationServiceTest {
     @Test
     fun `reject confirmation persists rejected status and notifies process`() {
 
+        // given: a pending membership in the repository
         val membershipId = MembershipId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
         val membership = testMembership(id = membershipId)
-
         every { membershipRepository.find(membershipId) } returns membership
         every { membershipRepository.save(any()) } just Runs
         every { processPort.rejectConfirmation(membershipId) } just Runs
 
+        // when: the use case is invoked
         underTest.rejectConfirmation(membershipId)
 
+        // then: the membership is marked REJECTED and the process is notified
         verify { membershipRepository.find(membershipId) }
         verify { membershipRepository.save(match { it.status == MembershipStatus.REJECTED }) }
         verify { processPort.rejectConfirmation(membershipId) }

@@ -35,7 +35,7 @@ class MembershipProcessAdapter(
     }
 
     private fun findActiveConfirmUserTask(id: MembershipId): Long {
-        val tasks = camundaClient.newUserTaskSearchRequest()
+        return camundaClient.newUserTaskSearchRequest()
             .filter { filter ->
                 filter.state(UserTaskState.CREATED)
                 filter.elementId(MiraveloMembershipProcessApi.Elements.USER_TASK_CONFIRM_MEMBERSHIP)
@@ -46,6 +46,7 @@ class MembershipProcessAdapter(
             .send()
             .join()
             .items()
-        return tasks.single().userTaskKey
+            .single()
+            .userTaskKey
     }
 }
