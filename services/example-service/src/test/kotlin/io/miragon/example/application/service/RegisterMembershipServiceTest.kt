@@ -32,7 +32,7 @@ class RegisterMembershipServiceTest {
 
         val captor = slot<Membership>()
         every { membershipRepository.save(capture(captor)) } just Runs
-        every { processPort.registerMembership(any<MembershipId>()) } returns 1L
+        every { processPort.registerMembership(any<MembershipId>()) } just Runs
 
         val command = RegisterMembershipUseCase.Command(
             name = Name("John Doe"),

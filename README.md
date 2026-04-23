@@ -39,8 +39,19 @@ Because someone read a book about luxury brands and now inserts "Premium Positio
 > — Honest comment from Sprint Planning
 
 From a process perspective, this means a **gateway** — the merciless bouncer in the process flow.
-Got a spot? Congratulations, move on: confirmation mail, member confirms, welcome mail.
+Got a spot? Confirmation mail, member confirms via a user task, welcome mail, signal: *activated.*
 No spot? Rejection mail. No appeal. The gateway decides.
+
+But scarcity creates a different problem: what if someone claims a spot and then *ghosts*?
+So the happy path is wrapped in a **Confirm Membership sub-process** with three safety nets:
+
+- a **non-interrupting daily timer** that re-sends the confirmation mail every 24h — gentle FOMO,
+- an **interrupting 3½-day timer** that revokes the membership request if no one confirmed in time,
+- a **`Confirmation rejected` message boundary event** — if the user explicitly declines.
+
+Any of those three exits trigger a **compensating `Revoke Claim` task** that hands the spot back to the
+pool, and the process ends on a `Membership declined` compensation end event. The happy path ends on a
+`Membership activated` signal end event — ready for any downstream integrations to react to.
 
 This repository implements exactly that membership process as a clean, testable Zeebe + Spring Boot service:
 
@@ -147,12 +158,20 @@ object MiraveloMembershipProcessApi {
     object TaskTypes {
         const val MIRAVELO_CLAIM_MEMBERSHIP: String = "miravelo.claimMembership"
         const val MIRAVELO_SEND_CONFIRMATION_MAIL: String = "miravelo.sendConfirmationMail"
+        const val MIRAVELO_RE_SEND_CONFIRMATION_MAIL: String = "miravelo.reSendConfirmationMail"
         const val MIRAVELO_SEND_WELCOME_MAIL: String = "miravelo.sendWelcomeMail"
         const val MIRAVELO_SEND_REJECTION_MAIL: String = "miravelo.sendRejectionMail"
+        const val MIRAVELO_REVOKE_MEMBERSHIP_REQUEST: String = "miravelo.revokeMembershipRequest"
+        const val MIRAVELO_REVOKE_CLAIM: String = "miravelo.revokeClaim"
     }
 
     object Messages {
-        const val MIRAVELO_MEMBERSHIP_CONFIRMED: String = "miravelo.membershipConfirmed"
+        const val MIRAVELO_MEMBERSHIP_REQUESTED: String = "miravelo.membershipRequested"
+        const val MIRAVELO_CONFIRMATION_REJECTED: String = "miravelo.confirmationRejected"
+    }
+
+    object Signals {
+        const val MIRAVELO_MEMBERSHIP_ACTIVATED: String = "miravelo.membershipActivated"
     }
 
     object Variables {

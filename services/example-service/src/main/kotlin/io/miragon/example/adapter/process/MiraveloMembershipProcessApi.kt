@@ -12,15 +12,35 @@ object MiraveloMembershipProcessApi {
   const val PROCESS_ENGINE: String = "ZEEBE"
 
   object Elements {
+    const val END_EVENT_MAIL_SENT_AGAIN: String = "endEvent_MailSentAgain"
+
+    const val END_EVENT_MEMBERSHIP_ACTIVATED: String = "endEvent_MembershipActivated"
+
     const val END_EVENT_MEMBERSHIP_CONFIRMED: String = "endEvent_MembershipConfirmed"
+
+    const val END_EVENT_MEMBERSHIP_DECLINED: String = "endEvent_MembershipDeclined"
 
     const val END_EVENT_MEMBERSHIP_REJECTED: String = "endEvent_MembershipRejected"
 
+    const val EVENT_CLAIM_COMPENSATION: String = "event_ClaimCompensation"
+
+    const val EVENT_CONFIRMATION_DEADLINE_PASSED: String = "event_ConfirmationDeadlinePassed"
+
+    const val EVENT_CONFIRMATION_REJECTED: String = "event_ConfirmationRejected"
+
+    const val EVENT_REMINDER_DUE: String = "event_ReminderDue"
+
     const val GATEWAY_HAS_EMPTY_SPOTS: String = "gateway_HasEmptySpots"
 
-    const val RECEIVE_TASK_CONFIRM_MEMBERSHIP: String = "receiveTask_ConfirmMembership"
-
     const val SERVICE_TASK_CLAIM_MEMBERSHIP: String = "serviceTask_ClaimMembership"
+
+    const val SERVICE_TASK_RE_SEND_CONFIRMATION_MAIL: String =
+        "serviceTask_ReSendConfirmationMail"
+
+    const val SERVICE_TASK_REVOKE_CLAIM: String = "serviceTask_RevokeClaim"
+
+    const val SERVICE_TASK_REVOKE_MEMBERSHIP_REQUEST: String =
+        "serviceTask_RevokeMembershipRequest"
 
     const val SERVICE_TASK_SEND_CONFIRMATION_MAIL: String =
         "serviceTask_SendConfirmationMail"
@@ -29,22 +49,50 @@ object MiraveloMembershipProcessApi {
 
     const val SERVICE_TASK_SEND_WELCOME_MAIL: String = "serviceTask_SendWelcomeMail"
 
-    const val START_EVENT_MEMBERSHIP_FORM_SUBMITTED: String =
-        "startEvent_MembershipFormSubmitted"
+    const val START_EVENT_CONFIRMATION_REQUIRED: String = "startEvent_ConfirmationRequired"
+
+    const val START_EVENT_MEMBERSHIP_REQUESTED: String = "startEvent_MembershipRequested"
+
+    const val SUB_PROCESS_CONFIRM_MEMBERSHIP: String = "subProcess_ConfirmMembership"
+
+    const val USER_TASK_CONFIRM_MEMBERSHIP: String = "userTask_ConfirmMembership"
   }
 
   object Messages {
-    const val MIRAVELO_MEMBERSHIP_CONFIRMED: String = "miravelo.membershipConfirmed"
+    const val MIRAVELO_CONFIRMATION_REJECTED: String = "miravelo.confirmationRejected"
+
+    const val MIRAVELO_MEMBERSHIP_REQUESTED: String = "miravelo.membershipRequested"
   }
 
   object TaskTypes {
     const val MIRAVELO_CLAIM_MEMBERSHIP: String = "miravelo.claimMembership"
+
+    const val MIRAVELO_RE_SEND_CONFIRMATION_MAIL: String = "miravelo.reSendConfirmationMail"
+
+    const val MIRAVELO_REVOKE_CLAIM: String = "miravelo.revokeClaim"
+
+    const val MIRAVELO_REVOKE_MEMBERSHIP_REQUEST: String = "miravelo.revokeMembershipRequest"
 
     const val MIRAVELO_SEND_CONFIRMATION_MAIL: String = "miravelo.sendConfirmationMail"
 
     const val MIRAVELO_SEND_REJECTION_MAIL: String = "miravelo.sendRejectionMail"
 
     const val MIRAVELO_SEND_WELCOME_MAIL: String = "miravelo.sendWelcomeMail"
+  }
+
+  object Timers {
+    val EVENT_CONFIRMATION_DEADLINE_PASSED: BpmnTimer = BpmnTimer("Duration", "P3DT12H")
+
+    val EVENT_REMINDER_DUE: BpmnTimer = BpmnTimer("Cycle", "R/P1D")
+
+    data class BpmnTimer(
+      val type: String,
+      val timerValue: String,
+    )
+  }
+
+  object Signals {
+    const val MIRAVELO_MEMBERSHIP_ACTIVATED: String = "miravelo.membershipActivated"
   }
 
   object Variables {
