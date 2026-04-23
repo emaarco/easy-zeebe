@@ -13,4 +13,5 @@ data class Membership(
 ) {
     fun confirmMembership() = this.copy(status = MembershipStatus.CONFIRMED)
     fun rejectMembership() = this.copy(status = MembershipStatus.REJECTED)
+    fun declineMembership() = this.copy(status = MembershipStatus.DECLINED)
 }

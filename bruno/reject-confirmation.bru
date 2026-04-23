@@ -1,0 +1,15 @@
+meta {
+  name: Reject Confirmation
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://localhost:8081/api/memberships/reject-confirmation/:membershipId
+  body: none
+  auth: none
+}
+
+params:path {
+  membershipId: {{membershipId}}
+}
