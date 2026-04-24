@@ -21,26 +21,12 @@ a curated collection of practices and patterns you can adopt in your own project
 
 ## 💡 Automation in Action
 
-**Strategy meeting. Friday afternoon. Someone brought oat milk flat whites.**
+[Miravelo](https://github.com/Miragon) is launching the **MiraVelo Inner Circle** — an exclusive membership for true fans. One thousand spots, because scarcity is a business model and someone read a book about luxury brands.
 
-[Miravelo](https://github.com/Miragon) — a lifestyle online shop for people in the quarterlife crisis,
-selling gravel bikes for weekends that matter and road bikes for those who want to feel the asphalt
-under their tires — has a plan.
-
-They're launching the **MiraVelo Inner Circle**: a limited, exclusive membership for true fans of the brand.
-Gravel bike in the basement, road bike on the wall — you know who they mean.
-
-One thousand spots. That's the capacity. Why one thousand?
-Because scarcity creates value. Because FOMO is a business model.
-Because someone read a book about luxury brands and now inserts "Premium Positioning" into every sentence.
-
-> *"We're not exclusive because we're good. We're exclusive because we only have 1000 spots
-> and the counter in the database is set to 1000."*
+> *"We're not exclusive because we're good. We're exclusive because the counter in the database is set to 1000."*
 > — Honest comment from Sprint Planning
 
-From a process perspective, this means a **gateway** — the merciless bouncer.
-No spot? Rejection mail. No appeal. The gateway decides.
-Got a spot? The happy path enters a **Confirm Membership sub-process** with three safety nets: a daily re-send timer (gentle FOMO), an interrupting 3½-day deadline, and a `Confirmation rejected` message boundary event. Each exit triggers a compensating `Revoke Claim` task; the process ends on a `Membership declined` end event. The happy path ends on a `Membership activated` signal end event.
+A **gateway** decides who gets in. No spot? Rejection mail. Got a spot? A **Confirm Membership sub-process** follows — with a daily re-send timer, an interrupting 3½-day deadline, and an explicit rejection escape hatch. Any exit triggers a compensating `Revoke Claim` task.
 
 This repository implements exactly that:
 
