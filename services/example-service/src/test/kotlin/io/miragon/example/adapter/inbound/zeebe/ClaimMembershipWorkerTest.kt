@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe
 
-import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.Variables.HAS_EMPTY_SPOTS
+import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.Variables.ServiceTaskClaimMembership
 import io.miragon.example.application.port.inbound.ClaimMembershipUseCase
 import io.miragon.example.domain.MembershipId
 import io.mockk.confirmVerified
@@ -28,7 +28,7 @@ class ClaimMembershipWorkerTest {
         val result = underTest.handle(membershipId)
 
         // Then
-        assertThat(result).containsExactly(entry(HAS_EMPTY_SPOTS, true))
+        assertThat(result).containsExactly(entry(ServiceTaskClaimMembership.HAS_EMPTY_SPOTS.value, true))
         verify(exactly = 1) { useCase.claim(MembershipId(membershipId)) }
         confirmVerified(useCase)
     }
@@ -44,7 +44,7 @@ class ClaimMembershipWorkerTest {
         val result = underTest.handle(membershipId)
 
         // Then
-        assertThat(result).containsExactly(entry(HAS_EMPTY_SPOTS, false))
+        assertThat(result).containsExactly(entry(ServiceTaskClaimMembership.HAS_EMPTY_SPOTS.value, false))
         verify(exactly = 1) { useCase.claim(MembershipId(membershipId)) }
         confirmVerified(useCase)
     }

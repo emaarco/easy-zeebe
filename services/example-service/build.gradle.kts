@@ -17,6 +17,7 @@ group = "io.miragon.example"
 version = "1.0-SNAPSHOT"
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -29,6 +30,7 @@ dependencies {
     testImplementation(project(":services:common-zeebe-test"))
     testImplementation(project(":services:common-architecture-test"))
     testImplementation("com.h2database:h2")
+    testRuntimeOnly(libs.junitPlatformLauncher)
 }
 
 tasks.named<GenerateBpmnModelsTask>("generateBpmnModelApi") {
@@ -38,7 +40,6 @@ tasks.named<GenerateBpmnModelsTask>("generateBpmnModelApi") {
     packagePath = "io.miragon.example.adapter.process"
     outputLanguage = OutputLanguage.KOTLIN
     processEngine = ProcessEngine.ZEEBE
-    useVersioning = false
 }
 
 tasks.test {

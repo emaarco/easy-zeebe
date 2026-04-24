@@ -25,6 +25,15 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      # Step 4: Run Gradle build
+      # Step 4: easy-zeebe serves as a beta-test bed for the bpmn-to-code plugin.
+      # New plugin versions are validated here before being published to the Gradle Plugin Portal,
+      # so we build and install the plugin from source into maven local.
+      - name: Install bpmn-to-code Gradle plugin from source (pre-release)
+        run: |
+          git clone --depth 1 https://github.com/emaarco/bpmn-to-code.git /tmp/bpmn-to-code
+          cd /tmp/bpmn-to-code
+          ./gradlew publishToMavenLocal
+
+      # Step 5: Run Gradle build
       - name: Run Gradle Build
         run: ./gradlew build

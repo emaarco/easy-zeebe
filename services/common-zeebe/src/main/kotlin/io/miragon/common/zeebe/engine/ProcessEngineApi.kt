@@ -1,5 +1,8 @@
 package io.miragon.common.zeebe.engine
 
+import io.github.emaarco.bpmn.runtime.MessageName
+import io.github.emaarco.bpmn.runtime.ProcessId
+import io.github.emaarco.bpmn.runtime.VariableName
 import io.miragon.common.zeebe.context.EventualConsistent
 import io.miragon.common.zeebe.context.StronglyConsistent
 import io.camunda.client.CamundaClient
@@ -19,13 +22,13 @@ open class ProcessEngineApi(
      */
     @StronglyConsistent
     open fun startProcess(
-        processId: String,
-        variables: Map<String, Any> = emptyMap(),
+        processId: ProcessId,
+        variables: Map<VariableName, Any> = emptyMap(),
     ): Long {
         return camundaClient.newCreateInstanceCommand()
-            .bpmnProcessId(processId)
+            .bpmnProcessId(processId.value)
             .latestVersion()
-            .variables(variables)
+            .variables(variables.mapKeys { it.key.value })
             .send()
             .join()
             .processInstanceKey
@@ -33,20 +36,20 @@ open class ProcessEngineApi(
 
     /**
      * Use this method to send a message to a running process instance.
-     * @param messageName the id of the message that should be sent
+     * @param messageName the name of the message that should be sent
      * @param correlationId an id that is used to identify the process instance
      * @param variables the variables that should be passed to the process
      */
     @StronglyConsistent
     open fun sendMessage(
-        messageName: String,
+        messageName: MessageName,
         correlationId: String,
-        variables: Map<String, Any> = emptyMap(),
+        variables: Map<VariableName, Any> = emptyMap(),
     ) {
         camundaClient.newPublishMessageCommand()
-            .messageName(messageName)
+            .messageName(messageName.value)
             .correlationKey(correlationId)
-            .variables(variables)
+            .variables(variables.mapKeys { it.key.value })
             .timeToLive(Duration.of(10, ChronoUnit.SECONDS))
             .send()
             .join()

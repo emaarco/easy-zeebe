@@ -3,68 +3,95 @@
 
 package io.miragon.example.adapter.process
 
+import io.github.emaarco.bpmn.runtime.BpmnEngine
+import io.github.emaarco.bpmn.runtime.BpmnFlow
+import io.github.emaarco.bpmn.runtime.BpmnRelations
+import io.github.emaarco.bpmn.runtime.BpmnTimer
+import io.github.emaarco.bpmn.runtime.ElementId
+import io.github.emaarco.bpmn.runtime.MessageName
+import io.github.emaarco.bpmn.runtime.ProcessId
+import io.github.emaarco.bpmn.runtime.SignalName
+import io.github.emaarco.bpmn.runtime.VariableName
 import kotlin.String
 import kotlin.Suppress
 
 object MiraveloMembershipProcessApi {
-  const val PROCESS_ID: String = "miravelo-membership"
+  val PROCESS_ID: ProcessId = ProcessId("miravelo-membership")
 
-  const val PROCESS_ENGINE: String = "ZEEBE"
+  val PROCESS_ENGINE: BpmnEngine = BpmnEngine.ZEEBE
 
+  /**
+   * BPMN element ids as declared in the source model.
+   * Typically used in process-level tests or when searching for tasks.
+   * Worker runtime code rarely needs these.
+   */
   object Elements {
-    const val END_EVENT_MAIL_SENT_AGAIN: String = "endEvent_MailSentAgain"
+    val END_EVENT_MAIL_SENT_AGAIN: ElementId = ElementId("endEvent_MailSentAgain")
 
-    const val END_EVENT_MEMBERSHIP_ACTIVATED: String = "endEvent_MembershipActivated"
+    val END_EVENT_MEMBERSHIP_ACTIVATED: ElementId = ElementId("endEvent_MembershipActivated")
 
-    const val END_EVENT_MEMBERSHIP_CONFIRMED: String = "endEvent_MembershipConfirmed"
+    val END_EVENT_MEMBERSHIP_CONFIRMED: ElementId = ElementId("endEvent_MembershipConfirmed")
 
-    const val END_EVENT_MEMBERSHIP_DECLINED: String = "endEvent_MembershipDeclined"
+    val END_EVENT_MEMBERSHIP_DECLINED: ElementId = ElementId("endEvent_MembershipDeclined")
 
-    const val END_EVENT_MEMBERSHIP_REJECTED: String = "endEvent_MembershipRejected"
+    val END_EVENT_MEMBERSHIP_REJECTED: ElementId = ElementId("endEvent_MembershipRejected")
 
-    const val EVENT_CLAIM_COMPENSATION: String = "event_ClaimCompensation"
+    val EVENT_CLAIM_COMPENSATION: ElementId = ElementId("event_ClaimCompensation")
 
-    const val EVENT_CONFIRMATION_DEADLINE_PASSED: String = "event_ConfirmationDeadlinePassed"
+    val EVENT_CONFIRMATION_DEADLINE_PASSED: ElementId =
+        ElementId("event_ConfirmationDeadlinePassed")
 
-    const val EVENT_CONFIRMATION_REJECTED: String = "event_ConfirmationRejected"
+    val EVENT_CONFIRMATION_REJECTED: ElementId = ElementId("event_ConfirmationRejected")
 
-    const val EVENT_REMINDER_DUE: String = "event_ReminderDue"
+    val EVENT_REMINDER_DUE: ElementId = ElementId("event_ReminderDue")
 
-    const val GATEWAY_HAS_EMPTY_SPOTS: String = "gateway_HasEmptySpots"
+    val GATEWAY_HAS_EMPTY_SPOTS: ElementId = ElementId("gateway_HasEmptySpots")
 
-    const val SERVICE_TASK_CLAIM_MEMBERSHIP: String = "serviceTask_ClaimMembership"
+    val SERVICE_TASK_CLAIM_MEMBERSHIP: ElementId = ElementId("serviceTask_ClaimMembership")
 
-    const val SERVICE_TASK_RE_SEND_CONFIRMATION_MAIL: String =
-        "serviceTask_ReSendConfirmationMail"
+    val SERVICE_TASK_RE_SEND_CONFIRMATION_MAIL: ElementId =
+        ElementId("serviceTask_ReSendConfirmationMail")
 
-    const val SERVICE_TASK_REVOKE_CLAIM: String = "serviceTask_RevokeClaim"
+    val SERVICE_TASK_REVOKE_CLAIM: ElementId = ElementId("serviceTask_RevokeClaim")
 
-    const val SERVICE_TASK_REVOKE_MEMBERSHIP_REQUEST: String =
-        "serviceTask_RevokeMembershipRequest"
+    val SERVICE_TASK_REVOKE_MEMBERSHIP_REQUEST: ElementId =
+        ElementId("serviceTask_RevokeMembershipRequest")
 
-    const val SERVICE_TASK_SEND_CONFIRMATION_MAIL: String =
-        "serviceTask_SendConfirmationMail"
+    val SERVICE_TASK_SEND_CONFIRMATION_MAIL: ElementId =
+        ElementId("serviceTask_SendConfirmationMail")
 
-    const val SERVICE_TASK_SEND_REJECTION_MAIL: String = "serviceTask_SendRejectionMail"
+    val SERVICE_TASK_SEND_REJECTION_MAIL: ElementId =
+        ElementId("serviceTask_SendRejectionMail")
 
-    const val SERVICE_TASK_SEND_WELCOME_MAIL: String = "serviceTask_SendWelcomeMail"
+    val SERVICE_TASK_SEND_WELCOME_MAIL: ElementId = ElementId("serviceTask_SendWelcomeMail")
 
-    const val START_EVENT_CONFIRMATION_REQUIRED: String = "startEvent_ConfirmationRequired"
+    val START_EVENT_CONFIRMATION_REQUIRED: ElementId =
+        ElementId("startEvent_ConfirmationRequired")
 
-    const val START_EVENT_MEMBERSHIP_REQUESTED: String = "startEvent_MembershipRequested"
+    val START_EVENT_MEMBERSHIP_REQUESTED: ElementId =
+        ElementId("startEvent_MembershipRequested")
 
-    const val SUB_PROCESS_CONFIRM_MEMBERSHIP: String = "subProcess_ConfirmMembership"
+    val SUB_PROCESS_CONFIRM_MEMBERSHIP: ElementId = ElementId("subProcess_ConfirmMembership")
 
-    const val USER_TASK_CONFIRM_MEMBERSHIP: String = "userTask_ConfirmMembership"
+    val USER_TASK_CONFIRM_MEMBERSHIP: ElementId = ElementId("userTask_ConfirmMembership")
   }
 
+  /**
+   * BPMN message names used to correlate messages to running process instances.
+   */
   object Messages {
-    const val MIRAVELO_CONFIRMATION_REJECTED: String = "miravelo.confirmationRejected"
+    val MIRAVELO_CONFIRMATION_REJECTED: MessageName =
+        MessageName("miravelo.confirmationRejected")
 
-    const val MIRAVELO_MEMBERSHIP_REQUESTED: String = "miravelo.membershipRequested"
+    val MIRAVELO_MEMBERSHIP_REQUESTED: MessageName =
+        MessageName("miravelo.membershipRequested")
   }
 
-  object TaskTypes {
+  /**
+   * Job worker task types used in `@JobWorker(type = ServiceTasks.X)` annotations.
+   * Kept as `const val String` because annotation arguments must be compile-time constants.
+   */
+  object ServiceTasks {
     const val MIRAVELO_CLAIM_MEMBERSHIP: String = "miravelo.claimMembership"
 
     const val MIRAVELO_RE_SEND_CONFIRMATION_MAIL: String = "miravelo.reSendConfirmationMail"
@@ -84,20 +111,326 @@ object MiraveloMembershipProcessApi {
     val EVENT_CONFIRMATION_DEADLINE_PASSED: BpmnTimer = BpmnTimer("Duration", "P3DT12H")
 
     val EVENT_REMINDER_DUE: BpmnTimer = BpmnTimer("Cycle", "R/P1D")
+  }
 
-    data class BpmnTimer(
-      val type: String,
-      val timerValue: String,
-    )
+  object Compensations {
+    val END_EVENT_MEMBERSHIP_DECLINED: ElementId = ElementId("endEvent_MembershipDeclined")
+
+    val EVENT_CLAIM_COMPENSATION: ElementId = ElementId("event_ClaimCompensation")
   }
 
   object Signals {
-    const val MIRAVELO_MEMBERSHIP_ACTIVATED: String = "miravelo.membershipActivated"
+    val MIRAVELO_MEMBERSHIP_ACTIVATED: SignalName =
+        SignalName("miravelo.membershipActivated")
   }
 
+  /**
+   * Process variables grouped by the BPMN element that declares them.
+   * Direction is encoded in each variable's wrapper type: `VariableName.Input`, `VariableName.Output`, or `VariableName.InOut` when the variable is both read and written by the same element.
+   * Consumer APIs that take a specific subtype (e.g. `fun setOutput(v: VariableName.Output)`) get compile-time direction enforcement.
+   */
   object Variables {
-    const val HAS_EMPTY_SPOTS: String = "hasEmptySpots"
+    object ServiceTaskClaimMembership {
+      val HAS_EMPTY_SPOTS: VariableName.Output = VariableName.Output("hasEmptySpots")
+    }
 
-    const val MEMBERSHIP_ID: String = "membershipId"
+    object StartEventMembershipRequested {
+      val MEMBERSHIP_ID: VariableName.Output = VariableName.Output("membershipId")
+    }
+  }
+
+  /**
+   * Sequence flows between BPMN elements.
+   * Mainly useful for process-model tooling, tests, and AI-agent consumers reasoning about the process shape.
+   * Worker code typically does not need these.
+   */
+  object Flows {
+    val FLOW_CLAIM_TO_GATEWAY: BpmnFlow = BpmnFlow(
+          id = "Flow_claim_to_gateway",
+          sourceRef = "serviceTask_ClaimMembership",
+          targetRef = "gateway_HasEmptySpots",
+        )
+
+    val FLOW_CONFIRMATION_MAIL_TO_USER_TASK: BpmnFlow = BpmnFlow(
+          id = "Flow_confirmationMail_to_userTask",
+          sourceRef = "serviceTask_SendConfirmationMail",
+          targetRef = "userTask_ConfirmMembership",
+        )
+
+    val FLOW_NO_SPOTS: BpmnFlow = BpmnFlow(
+          id = "Flow_no_spots",
+          name = "No",
+          sourceRef = "gateway_HasEmptySpots",
+          targetRef = "serviceTask_SendRejectionMail",
+          isDefault = true,
+        )
+
+    val FLOW_RE_SEND_TO_END: BpmnFlow = BpmnFlow(
+          id = "Flow_reSend_to_end",
+          sourceRef = "serviceTask_ReSendConfirmationMail",
+          targetRef = "endEvent_MailSentAgain",
+        )
+
+    val FLOW_REJECTED_TO_REVOKE: BpmnFlow = BpmnFlow(
+          id = "Flow_rejected_to_revoke",
+          sourceRef = "event_ConfirmationRejected",
+          targetRef = "serviceTask_RevokeMembershipRequest",
+        )
+
+    val FLOW_REJECTION_TO_END: BpmnFlow = BpmnFlow(
+          id = "Flow_rejection_to_end",
+          sourceRef = "serviceTask_SendRejectionMail",
+          targetRef = "endEvent_MembershipRejected",
+        )
+
+    val FLOW_REVOKE_TO_DECLINED: BpmnFlow = BpmnFlow(
+          id = "Flow_revoke_to_declined",
+          sourceRef = "serviceTask_RevokeMembershipRequest",
+          targetRef = "endEvent_MembershipDeclined",
+        )
+
+    val FLOW_START_TO_CLAIM: BpmnFlow = BpmnFlow(
+          id = "Flow_start_to_claim",
+          sourceRef = "startEvent_MembershipRequested",
+          targetRef = "serviceTask_ClaimMembership",
+        )
+
+    val FLOW_SUB_PROCESS_TO_WELCOME: BpmnFlow = BpmnFlow(
+          id = "Flow_subProcess_to_welcome",
+          sourceRef = "subProcess_ConfirmMembership",
+          targetRef = "serviceTask_SendWelcomeMail",
+        )
+
+    val FLOW_SUB_START_TO_CONFIRMATION_MAIL: BpmnFlow = BpmnFlow(
+          id = "Flow_subStart_to_confirmationMail",
+          sourceRef = "startEvent_ConfirmationRequired",
+          targetRef = "serviceTask_SendConfirmationMail",
+        )
+
+    val FLOW_TIMEOUT_TO_REVOKE: BpmnFlow = BpmnFlow(
+          id = "Flow_timeout_to_revoke",
+          sourceRef = "event_ConfirmationDeadlinePassed",
+          targetRef = "serviceTask_RevokeMembershipRequest",
+        )
+
+    val FLOW_TIMER_TO_RE_SEND: BpmnFlow = BpmnFlow(
+          id = "Flow_timer_to_reSend",
+          sourceRef = "event_ReminderDue",
+          targetRef = "serviceTask_ReSendConfirmationMail",
+        )
+
+    val FLOW_USER_TASK_TO_SUB_END: BpmnFlow = BpmnFlow(
+          id = "Flow_userTask_to_subEnd",
+          sourceRef = "userTask_ConfirmMembership",
+          targetRef = "endEvent_MembershipConfirmed",
+        )
+
+    val FLOW_WELCOME_TO_ACTIVATED: BpmnFlow = BpmnFlow(
+          id = "Flow_welcome_to_activated",
+          sourceRef = "serviceTask_SendWelcomeMail",
+          targetRef = "endEvent_MembershipActivated",
+        )
+
+    val FLOW_YES_SPOTS: BpmnFlow = BpmnFlow(
+          id = "Flow_yes_spots",
+          name = "Yes",
+          sourceRef = "gateway_HasEmptySpots",
+          targetRef = "subProcess_ConfirmMembership",
+          condition = "=hasEmptySpots",
+        )
+  }
+
+  /**
+   * Per-element graph metadata (previousElements / followingElements / parentId / boundary attachments).
+   * Intended for tooling and tests, not worker runtime code.
+   */
+  object Relations {
+    val END_EVENT_MAIL_SENT_AGAIN: BpmnRelations = BpmnRelations(
+          name = "Mail sent again",
+          previousElements = listOf("serviceTask_ReSendConfirmationMail"),
+          followingElements = emptyList(),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val END_EVENT_MEMBERSHIP_ACTIVATED: BpmnRelations = BpmnRelations(
+          name = "Membership activated",
+          previousElements = listOf("serviceTask_SendWelcomeMail"),
+          followingElements = emptyList(),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val END_EVENT_MEMBERSHIP_CONFIRMED: BpmnRelations = BpmnRelations(
+          name = "Membership confirmed",
+          previousElements = listOf("userTask_ConfirmMembership"),
+          followingElements = emptyList(),
+          parentId = "subProcess_ConfirmMembership",
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val END_EVENT_MEMBERSHIP_DECLINED: BpmnRelations = BpmnRelations(
+          name = "Membership declined",
+          previousElements = listOf("serviceTask_RevokeMembershipRequest"),
+          followingElements = emptyList(),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val END_EVENT_MEMBERSHIP_REJECTED: BpmnRelations = BpmnRelations(
+          name = "Membership rejected",
+          previousElements = listOf("serviceTask_SendRejectionMail"),
+          followingElements = emptyList(),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val EVENT_CLAIM_COMPENSATION: BpmnRelations = BpmnRelations(
+          previousElements = emptyList(),
+          followingElements = emptyList(),
+          parentId = null,
+          attachedToRef = "serviceTask_ClaimMembership",
+          attachedElements = emptyList(),
+        )
+
+    val EVENT_CONFIRMATION_DEADLINE_PASSED: BpmnRelations = BpmnRelations(
+          name = "Deadline passed",
+          previousElements = emptyList(),
+          followingElements = listOf("serviceTask_RevokeMembershipRequest"),
+          parentId = null,
+          attachedToRef = "subProcess_ConfirmMembership",
+          attachedElements = emptyList(),
+        )
+
+    val EVENT_CONFIRMATION_REJECTED: BpmnRelations = BpmnRelations(
+          name = "Confirmation rejected",
+          previousElements = emptyList(),
+          followingElements = listOf("serviceTask_RevokeMembershipRequest"),
+          parentId = null,
+          attachedToRef = "subProcess_ConfirmMembership",
+          attachedElements = emptyList(),
+        )
+
+    val EVENT_REMINDER_DUE: BpmnRelations = BpmnRelations(
+          name = "Reminder due",
+          previousElements = emptyList(),
+          followingElements = listOf("serviceTask_ReSendConfirmationMail"),
+          parentId = null,
+          attachedToRef = "subProcess_ConfirmMembership",
+          attachedElements = emptyList(),
+        )
+
+    val GATEWAY_HAS_EMPTY_SPOTS: BpmnRelations = BpmnRelations(
+          name = "Has empty spots?",
+          previousElements = listOf("serviceTask_ClaimMembership"),
+          followingElements = listOf("subProcess_ConfirmMembership", "serviceTask_SendRejectionMail"),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val SERVICE_TASK_CLAIM_MEMBERSHIP: BpmnRelations = BpmnRelations(
+          name = "Claim Membership",
+          previousElements = listOf("startEvent_MembershipRequested"),
+          followingElements = listOf("gateway_HasEmptySpots"),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = listOf("event_ClaimCompensation"),
+        )
+
+    val SERVICE_TASK_RE_SEND_CONFIRMATION_MAIL: BpmnRelations = BpmnRelations(
+          name = "Re-Send Confirmation Mail",
+          previousElements = listOf("event_ReminderDue"),
+          followingElements = listOf("endEvent_MailSentAgain"),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val SERVICE_TASK_REVOKE_CLAIM: BpmnRelations = BpmnRelations(
+          name = "Revoke Claim",
+          previousElements = emptyList(),
+          followingElements = emptyList(),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val SERVICE_TASK_REVOKE_MEMBERSHIP_REQUEST: BpmnRelations = BpmnRelations(
+          name = "Revoke Membership Request",
+          previousElements = listOf("event_ConfirmationDeadlinePassed", "event_ConfirmationRejected"),
+          followingElements = listOf("endEvent_MembershipDeclined"),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val SERVICE_TASK_SEND_CONFIRMATION_MAIL: BpmnRelations = BpmnRelations(
+          name = "Send Confirmation Mail",
+          previousElements = listOf("startEvent_ConfirmationRequired"),
+          followingElements = listOf("userTask_ConfirmMembership"),
+          parentId = "subProcess_ConfirmMembership",
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val SERVICE_TASK_SEND_REJECTION_MAIL: BpmnRelations = BpmnRelations(
+          name = "Send Rejection Mail",
+          previousElements = listOf("gateway_HasEmptySpots"),
+          followingElements = listOf("endEvent_MembershipRejected"),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val SERVICE_TASK_SEND_WELCOME_MAIL: BpmnRelations = BpmnRelations(
+          name = "Send Welcome Mail",
+          previousElements = listOf("subProcess_ConfirmMembership"),
+          followingElements = listOf("endEvent_MembershipActivated"),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val START_EVENT_CONFIRMATION_REQUIRED: BpmnRelations = BpmnRelations(
+          name = "Confirmation required",
+          previousElements = emptyList(),
+          followingElements = listOf("serviceTask_SendConfirmationMail"),
+          parentId = "subProcess_ConfirmMembership",
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val START_EVENT_MEMBERSHIP_REQUESTED: BpmnRelations = BpmnRelations(
+          name = "Membership requested",
+          previousElements = emptyList(),
+          followingElements = listOf("serviceTask_ClaimMembership"),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val SUB_PROCESS_CONFIRM_MEMBERSHIP: BpmnRelations = BpmnRelations(
+          name = "Confirm Membership",
+          previousElements = listOf("gateway_HasEmptySpots"),
+          followingElements = listOf("serviceTask_SendWelcomeMail"),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = listOf("event_ReminderDue", "event_ConfirmationRejected", "event_ConfirmationDeadlinePassed"),
+        )
+
+    val USER_TASK_CONFIRM_MEMBERSHIP: BpmnRelations = BpmnRelations(
+          name = "Confirm Membership",
+          previousElements = listOf("serviceTask_SendConfirmationMail"),
+          followingElements = listOf("endEvent_MembershipConfirmed"),
+          parentId = "subProcess_ConfirmMembership",
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
   }
 }

@@ -6,6 +6,7 @@ import io.camunda.process.test.api.CamundaAssert
 import io.camunda.process.test.api.CamundaProcessTestContext
 import io.camunda.process.test.api.CamundaSpringProcessTest
 import io.camunda.process.test.api.assertions.ProcessInstanceSelectors
+import io.miragon.common.test.assertions.hasCompletedElements
 import io.miragon.common.test.config.TestProcessEngineConfiguration
 import io.miragon.example.adapter.outbound.zeebe.MembershipProcessAdapter
 import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.Elements
@@ -97,7 +98,7 @@ class MiraveloMembershipProcessTest {
         processPort.registerMembership(MembershipId(membershipId))
         val instanceKey = awaitProcessInstance(membershipId)
         awaitUserTaskCreated(instanceKey)
-        processTestContext.completeUserTask(Elements.USER_TASK_CONFIRM_MEMBERSHIP)
+        processTestContext.completeUserTask(Elements.USER_TASK_CONFIRM_MEMBERSHIP.value)
 
         // then - process completes, welcome mail is sent, activation signal thrown
         val instance = ProcessInstanceSelectors.byKey(instanceKey)
@@ -263,7 +264,7 @@ class MiraveloMembershipProcessTest {
             .untilAsserted {
                 val instances = camundaClient.newProcessInstanceSearchRequest()
                     .filter { filter ->
-                        filter.processDefinitionId(MiraveloMembershipProcessApi.PROCESS_ID)
+                        filter.processDefinitionId(MiraveloMembershipProcessApi.PROCESS_ID.value)
                     }
                     .send()
                     .join()
@@ -282,7 +283,7 @@ class MiraveloMembershipProcessTest {
                 val tasks = camundaClient.newUserTaskSearchRequest()
                     .filter { filter ->
                         filter.processInstanceKey(processInstanceKey)
-                        filter.elementId(Elements.USER_TASK_CONFIRM_MEMBERSHIP)
+                        filter.elementId(Elements.USER_TASK_CONFIRM_MEMBERSHIP.value)
                     }
                     .send()
                     .join()

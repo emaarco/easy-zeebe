@@ -9,13 +9,16 @@ group = "io.miragon.example"
 version = "1.0-SNAPSHOT"
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
     implementation(libs.zeebeSdk)
+    api(libs.bpmnToCodeRuntime)
     implementation(libs.kotlin.logging)
     testImplementation(libs.bundles.test)
+    testRuntimeOnly(libs.junitPlatformLauncher)
 }
 
 tasks.test {

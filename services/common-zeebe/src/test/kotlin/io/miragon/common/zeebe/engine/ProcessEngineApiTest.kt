@@ -2,6 +2,9 @@ package io.miragon.common.zeebe.engine
 
 import io.camunda.client.CamundaClient
 import io.camunda.client.api.response.ProcessInstanceEvent
+import io.github.emaarco.bpmn.runtime.MessageName
+import io.github.emaarco.bpmn.runtime.ProcessId
+import io.github.emaarco.bpmn.runtime.VariableName
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -18,9 +21,10 @@ class ProcessEngineApiTest {
     @Test
     fun `should send message`() {
 
-        val testVariables = mapOf("dummy" to "dummy")
+        val dummyVar = VariableName.Output("dummy")
+        val testVariables: Map<VariableName, Any> = mapOf(dummyVar to "dummy")
         val correlationId = "correlationId"
-        val messageName = "messageName"
+        val messageName = MessageName("messageName")
 
         underTest.sendMessage(
             correlationId = correlationId,
@@ -30,9 +34,9 @@ class ProcessEngineApiTest {
 
         verify {
             camundaClient.newPublishMessageCommand()
-                .messageName(messageName)
+                .messageName(messageName.value)
                 .correlationKey(correlationId)
-                .variables(testVariables)
+                .variables(mapOf(dummyVar.value to "dummy"))
                 .timeToLive(Duration.of(10, ChronoUnit.SECONDS))
                 .send().join()
         }
@@ -42,20 +46,21 @@ class ProcessEngineApiTest {
     fun `should send start process message`() {
 
         // given: mock the process instance creation
-        val testVariables = mapOf("dummy" to "dummy")
-        val processId = "my-process"
+        val dummyVar = VariableName.Output("dummy")
+        val testVariables: Map<VariableName, Any> = mapOf(dummyVar to "dummy")
+        val processId = ProcessId("my-process")
         val expectedKey = 12345L
         val instanceEvent = mockk<ProcessInstanceEvent>()
-        val plainCommand = camundaClient.newCreateInstanceCommand().bpmnProcessId(processId).latestVersion()
+        val plainCommand = camundaClient.newCreateInstanceCommand().bpmnProcessId(processId.value).latestVersion()
         every { instanceEvent.processInstanceKey } returns expectedKey
-        every { plainCommand.variables(testVariables).send().join() } returns instanceEvent
+        every { plainCommand.variables(mapOf(dummyVar.value to "dummy")).send().join() } returns instanceEvent
 
         // when: start the process
         val result = underTest.startProcess(processId = processId, variables = testVariables)
 
         // then: the process instance key should be returned
         assertThat(result).isEqualTo(expectedKey)
-        verify { plainCommand.variables(testVariables).send().join() }
+        verify { plainCommand.variables(mapOf(dummyVar.value to "dummy")).send().join() }
     }
 
 }
