@@ -2,7 +2,7 @@ package io.miragon.example.adapter.inbound.zeebe
 
 import io.camunda.client.annotation.JobWorker
 import io.camunda.client.annotation.Variable
-import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.TaskTypes
+import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.ServiceTasks
 import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.Variables
 import io.miragon.example.application.port.inbound.ClaimMembershipUseCase
 import io.miragon.example.domain.MembershipId
@@ -17,10 +17,10 @@ class ClaimMembershipWorker(
 
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = TaskTypes.MIRAVELO_CLAIM_MEMBERSHIP)
+    @JobWorker(type = ServiceTasks.MIRAVELO_CLAIM_MEMBERSHIP)
     fun handle(@Variable membershipId: UUID): Map<String, Any> {
         log.debug { "Received job to claim membership for membershipId: $membershipId" }
         val hasEmptySpots = useCase.claim(MembershipId(membershipId))
-        return mapOf(Variables.HAS_EMPTY_SPOTS to hasEmptySpots)
+        return mapOf(Variables.ServiceTaskClaimMembership.HAS_EMPTY_SPOTS.value to hasEmptySpots)
     }
 }

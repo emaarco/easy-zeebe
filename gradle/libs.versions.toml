@@ -11,6 +11,7 @@ zeebe_version = "8.9.0"
 testcontainers_version = "2.0.4"
 postgres_version = "42.7.10"
 konsist_version = "0.17.3"
+bpmn_to_code_version = "2.0.0"
 
 [libraries]
 web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring_version" }
@@ -18,8 +19,10 @@ devtools = { module = "org.springframework.boot:spring-boot-devtools", version.r
 jpa = { module = 'org.springframework.boot:spring-boot-starter-data-jpa', version.ref = 'spring_version' }
 postgres = { module = 'org.postgresql:postgresql', version.ref = 'postgres_version' }
 zeebeSdk = { module = "io.camunda:camunda-spring-boot-starter", version.ref = "zeebe_version" }
+bpmnToCodeRuntime = { module = "io.github.emaarco:bpmn-to-code-runtime", version.ref = "bpmn_to_code_version" }
+junitPlatformLauncher = { module = "org.junit.platform:junit-platform-launcher", version = "6.0.3" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin_version" }
-kotlin_logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin_logging_version" }
+kotlin_logging = { module = "io.github.microutils:kotlin-logging-jvm", version.ref = "kotlin_logging_version" }
 
 # testing
 zeebeProcessTest = { module = "io.camunda:camunda-process-test-spring", version.ref = "zeebe_version" }
@@ -45,5 +48,5 @@ kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin_ver
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin_version" }
 springframework = { id = "org.springframework.boot", version.ref = "spring_version" }
 spring-dependency = { id = "io.spring.dependency-management", version.ref = "spring_dependency_version" }
-bpmnToCode = { id = "io.github.emaarco.bpmn-to-code-gradle", version = "1.0.0" }
+bpmnToCode = { id = "io.github.emaarco.bpmn-to-code-gradle", version.ref = "bpmn_to_code_version" }
 gradleRetryTesting = { id = "org.gradle.test-retry", version = "1.6.4" }

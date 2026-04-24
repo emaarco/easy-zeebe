@@ -2,7 +2,7 @@ package io.miragon.example.adapter.inbound.zeebe
 
 import io.camunda.client.annotation.JobWorker
 import io.camunda.client.annotation.Variable
-import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.TaskTypes
+import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.ServiceTasks
 import io.miragon.example.application.port.inbound.SendWelcomeMailUseCase
 import io.miragon.example.domain.MembershipId
 import mu.KotlinLogging
@@ -16,7 +16,7 @@ class SendWelcomeMailWorker(
 
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = TaskTypes.MIRAVELO_SEND_WELCOME_MAIL)
+    @JobWorker(type = ServiceTasks.MIRAVELO_SEND_WELCOME_MAIL)
     fun handle(@Variable membershipId: UUID) {
         log.debug { "Received job to send welcome mail for membershipId: $membershipId" }
         useCase.sendWelcomeMail(MembershipId(membershipId))

@@ -18,7 +18,7 @@ class MembershipProcessAdapter(
         engineApi.sendMessage(
             messageName = MiraveloMembershipProcessApi.Messages.MIRAVELO_MEMBERSHIP_REQUESTED,
             correlationId = id.value.toString(),
-            variables = mapOf(MiraveloMembershipProcessApi.Variables.MEMBERSHIP_ID to id.value.toString()),
+            variables = mapOf(MiraveloMembershipProcessApi.Variables.StartEventMembershipRequested.MEMBERSHIP_ID to id.value.toString()),
         )
     }
 
@@ -38,9 +38,9 @@ class MembershipProcessAdapter(
         return camundaClient.newUserTaskSearchRequest()
             .filter { filter ->
                 filter.state(UserTaskState.CREATED)
-                filter.elementId(MiraveloMembershipProcessApi.Elements.USER_TASK_CONFIRM_MEMBERSHIP)
+                filter.elementId(MiraveloMembershipProcessApi.Elements.USER_TASK_CONFIRM_MEMBERSHIP.value)
                 filter.processInstanceVariables(
-                    mapOf(MiraveloMembershipProcessApi.Variables.MEMBERSHIP_ID to id.value.toString())
+                    mapOf(MiraveloMembershipProcessApi.Variables.StartEventMembershipRequested.MEMBERSHIP_ID.value to id.value.toString())
                 )
             }
             .send()
