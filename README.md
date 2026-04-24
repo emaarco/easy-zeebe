@@ -21,7 +21,7 @@ a curated collection of practices and patterns you can adopt in your own project
 
 ## 💡 Automation in Action
 
-[Miravelo](https://github.com/Miragon) is launching the **MiraVelo Inner Circle** — an exclusive membership for true fans. One thousand spots, because scarcity is a business model and someone read a book about luxury brands.
+[Miravelo](https://github.com/Miragon) — a lifestyle shop for people who own both a gravel bike and a road bike — is launching the **MiraVelo Inner Circle**: an exclusive membership for true fans. One thousand spots, because scarcity is a business model and someone read a book about luxury brands.
 
 > *"We're not exclusive because we're good. We're exclusive because the counter in the database is set to 1000."*
 > — Honest comment from Sprint Planning
