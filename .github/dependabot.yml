@@ -21,6 +21,10 @@ updates:
       - "/stack"
     schedule:
       interval: "weekly"
+    labels:
+      - "dependencies"
+    assignees:
+      - "emaarco"
 
   # Config for GitHub Actions
   - package-ecosystem: "github-actions"
