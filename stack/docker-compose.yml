@@ -2,7 +2,7 @@
 services:
 
   postgres:
-    image: postgres:17.5
+    image: postgres:18.4
     container_name: easy-postgres
     ports:
       - 5432:5432
