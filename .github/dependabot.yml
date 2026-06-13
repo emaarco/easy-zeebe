@@ -6,6 +6,11 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
+      semver-major-days: 30
+      semver-minor-days: 14
+      semver-patch-days: 7
     groups:
       backend-dependencies:
         patterns:
@@ -20,7 +25,9 @@ updates:
     directories:
       - "/stack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+    cooldown:
+      default-days: 7
     labels:
       - "dependencies"
     assignees:
@@ -39,6 +46,8 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     labels:
       - "dependencies"
     assignees:
