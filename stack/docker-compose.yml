@@ -14,7 +14,7 @@ services:
 
   # Consolidated Zeebe + Operate + Tasklist - https://docs.camunda.io/docs/self-managed/setup/deploy/other/docker/#zeebe
   orchestration:
-    image: camunda/camunda:8.9.6
+    image: camunda/camunda:8.9.8
     container_name: easy-zeebe
     ports:
       - "26500:26500"
