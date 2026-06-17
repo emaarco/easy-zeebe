@@ -256,6 +256,58 @@ class MiraveloMembershipProcessTest {
         verify { revokeClaimUseCase wasNot Called }
     }
 
+    @Test
+    fun `start at confirmation via definition - skips earlier steps and waits at the user task`() {
+
+        // given
+        val membershipId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b91")
+
+        // when - start directly before the confirmation user task (claim + confirmation mail skipped)
+        processPort.startAtConfirmationViaDefinition(MembershipId(membershipId))
+        val instanceKey = awaitProcessInstance(membershipId)
+        awaitUserTaskCreated(instanceKey)
+
+        // then - instance waits at the user task; earlier workers never ran
+        val instance = ProcessInstanceSelectors.byKey(instanceKey)
+        CamundaAssert.assertThatProcessInstance(instance).isActive()
+        verify { claimMembershipUseCase wasNot Called }
+        verify { sendConfirmationMailUseCase wasNot Called }
+
+        // and - completing the user task continues the happy path normally
+        processTestContext.completeUserTask(Elements.USER_TASK_CONFIRM_MEMBERSHIP.value)
+        CamundaAssert.assertThatProcessInstance(instance).isCompleted()
+        CamundaAssert.assertThatProcessInstance(instance)
+            .hasCompletedElements(
+                Elements.USER_TASK_CONFIRM_MEMBERSHIP,
+                Elements.SERVICE_TASK_SEND_WELCOME_MAIL,
+                Elements.END_EVENT_MEMBERSHIP_ACTIVATED,
+            )
+        verify { sendWelcomeMailUseCase.sendWelcomeMail(MembershipId(membershipId)) }
+    }
+
+    @Test
+    fun `start at confirmation via message - message start then token moved to the user task`() {
+
+        // given
+        val membershipId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b92")
+
+        // when - start via the message start event, then move the token to the user task
+        processPort.startAtConfirmationViaMessage(MembershipId(membershipId))
+        val instanceKey = awaitProcessInstance(membershipId)
+        awaitUserTaskCreated(instanceKey)
+
+        // then - unlike the definition variant, the real flow ran first (claim worker executed),
+        // and the instance now waits at the (re-activated) user task
+        val instance = ProcessInstanceSelectors.byKey(instanceKey)
+        CamundaAssert.assertThatProcessInstance(instance).isActive()
+        verify { claimMembershipUseCase.claim(MembershipId(membershipId)) }
+
+        // and - completing the user task continues the happy path normally
+        processTestContext.completeUserTask(Elements.USER_TASK_CONFIRM_MEMBERSHIP.value)
+        CamundaAssert.assertThatProcessInstance(instance).isCompleted()
+        verify { sendWelcomeMailUseCase.sendWelcomeMail(MembershipId(membershipId)) }
+    }
+
     private fun awaitProcessInstance(membershipId: UUID): Long {
         var instanceKey: Long = 0
         Awaitility.await()
