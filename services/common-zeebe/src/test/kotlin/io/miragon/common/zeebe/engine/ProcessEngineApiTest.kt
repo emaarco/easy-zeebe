@@ -2,9 +2,9 @@ package io.miragon.common.zeebe.engine
 
 import io.camunda.client.CamundaClient
 import io.camunda.client.api.response.ProcessInstanceEvent
-import io.github.emaarco.bpmn.runtime.MessageName
-import io.github.emaarco.bpmn.runtime.ProcessId
-import io.github.emaarco.bpmn.runtime.VariableName
+import io.miragon.bpmn.runtime.MessageName
+import io.miragon.bpmn.runtime.ProcessId
+import io.miragon.bpmn.runtime.VariableName
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

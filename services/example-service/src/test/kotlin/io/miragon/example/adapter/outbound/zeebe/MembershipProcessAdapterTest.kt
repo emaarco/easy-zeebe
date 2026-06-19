@@ -9,7 +9,7 @@ import io.camunda.client.api.search.filter.UserTaskFilter
 import io.camunda.client.api.search.request.UserTaskSearchRequest
 import io.camunda.client.api.search.response.SearchResponse
 import io.camunda.client.api.search.response.UserTask
-import io.github.emaarco.bpmn.runtime.VariableName
+import io.miragon.bpmn.runtime.VariableName
 import io.miragon.common.zeebe.engine.ProcessEngineApi
 import io.miragon.example.adapter.process.MiraveloMembershipProcessApi
 import io.miragon.example.domain.MembershipId
