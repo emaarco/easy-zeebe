@@ -1,8 +1,8 @@
 package io.miragon.common.zeebe.engine
 
-import io.github.emaarco.bpmn.runtime.MessageName
-import io.github.emaarco.bpmn.runtime.ProcessId
-import io.github.emaarco.bpmn.runtime.VariableName
+import io.miragon.bpmn.runtime.MessageName
+import io.miragon.bpmn.runtime.ProcessId
+import io.miragon.bpmn.runtime.VariableName
 import io.miragon.common.zeebe.context.EventualConsistent
 import io.miragon.common.zeebe.context.StronglyConsistent
 import io.camunda.client.CamundaClient
