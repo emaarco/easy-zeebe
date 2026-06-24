@@ -1,6 +1,6 @@
 ---
 name: create-adr
-argument-hint: "\"<short description of the decision>\""
+argument-hint: '"<short description of the decision>"'
 allowed-tools: Read, Write, Glob
 description: Write a new Architectural Decision Record (ADR) for this project in MADR format with interactive content gathering and user confirmation before writing. Use when the user asks to "write an ADR", "create an architectural decision record", or "document a design decision". Auto-numbers from the existing ADR index, derives the filename slug from the title, and shows a full draft for review before writing the file.
 ---
@@ -35,6 +35,7 @@ zero-padded to four digits. If no non-template files exist (only `0000-adr-templ
 ### Step 2 – Derive the filename slug
 
 Convert `$ARGUMENTS` to a kebab-case slug:
+
 - Lowercase all characters
 - Replace spaces and underscores with hyphens
 - Remove characters that are not alphanumeric or hyphens
@@ -62,6 +63,7 @@ Ask the user the following (you may ask all at once). Skip any question that `$A
 ### Step 5 – Draft the ADR
 
 Compose the ADR using the template structure:
+
 - Title: short imperative phrase derived from `$ARGUMENTS`
 - Date: today's date in `YYYY-MM-DD` format
 - Status: `Accepted` by default — ask the user only if they indicate a different status is appropriate
@@ -80,6 +82,7 @@ Ask: "Write this ADR to `{target-path}`? (yes / edit / cancel)"
 ### Step 7 – Report
 
 After writing, output:
+
 - The path of the created file
 - A reminder to commit the ADR in the same commit as the code change it documents, so the decision and its
   implementation are traceable together in git history

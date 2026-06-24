@@ -1,14 +1,14 @@
 # What is a Process Adapter?
 
 A process adapter is an **outbound adapter** in hexagonal architecture terms.
-It lives at the boundary where *your application* reaches out to the process engine:
+It lives at the boundary where _your application_ reaches out to the process engine:
 your domain or application service calls the adapter to initiate or advance a process instance —
 start a process, send a correlation message, signal a boundary event, or query state.
 
 This is the mirror of a job worker:
 
 | Direction    | Pattern         | Who initiates the call?                     |
-|--------------|-----------------|---------------------------------------------|
+| ------------ | --------------- | ------------------------------------------- |
 | **Inbound**  | Job Worker      | The engine calls your code (or you poll it) |
 | **Outbound** | Process Adapter | Your code calls the engine                  |
 

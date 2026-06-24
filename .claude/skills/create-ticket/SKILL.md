@@ -1,6 +1,6 @@
 ---
 name: create-ticket
-argument-hint: "[feature|bug|refactor] \"<description>\" | update <issue-number-or-url>"
+argument-hint: '[feature|bug|refactor] "<description>" | update <issue-number-or-url>'
 allowed-tools: Bash(gh *)
 description: Create or update a GitHub issue for easy-zeebe using the `gh` CLI. Use when the user asks to "file a bug", "create a feature request", "open a GitHub issue", or "update an existing one". Supports feature, bug, and refactor issue types with structured templates; shows a draft for confirmation before creating or editing; looks up existing issues by number or URL for updates.
 ---
@@ -46,8 +46,8 @@ For an issue that needs to be updated
 
 If the issue involves a specific library, framework version, API, or configuration that you are not
 fully certain about, use `AskUserQuestion` to ask:
-*"Should I search online for [topic] to get accurate details (e.g. exact property names,
-migration guides) before drafting?"*
+_"Should I search online for [topic] to get accurate details (e.g. exact property names,
+migration guides) before drafting?"_
 If yes, use `WebSearch` / `WebFetch` to collect relevant facts, then incorporate them into the
 draft. Skip this step if you already have sufficient knowledge.
 

@@ -21,7 +21,7 @@ Every time `./gradlew test` runs, the layer boundaries and naming rules are veri
 Foundational checks that apply to any well-structured Kotlin service:
 
 | Rule                                   | Description                             |
-|----------------------------------------|-----------------------------------------|
+| -------------------------------------- | --------------------------------------- |
 | All classes have a package declaration | No class ends up in the default package |
 | No circular package dependencies       | Package graph is a DAG                  |
 
@@ -32,7 +32,7 @@ Hexagonal architecture-specific checks, grouped by concern:
 **Layer dependency rules** (checked via import names):
 
 | Rule              | Description                                                                                    |
-|-------------------|------------------------------------------------------------------------------------------------|
+| ----------------- | ---------------------------------------------------------------------------------------------- |
 | Domain isolation  | `domain` classes only import from the domain itself and `kotlin`/`java` stdlib                 |
 | Port purity       | `application.port` interfaces only import from the domain                                      |
 | Service scope     | `application.service` classes only import from `domain`, `application.port`, and standard libs |
@@ -41,20 +41,20 @@ Hexagonal architecture-specific checks, grouped by concern:
 **Port rules:**
 
 | Rule                 | Description                                                                           |
-|----------------------|---------------------------------------------------------------------------------------|
+| -------------------- | ------------------------------------------------------------------------------------- |
 | Ports are interfaces | All top-level declarations in `application.port` packages are interfaces, not classes |
 
 **Naming rules:**
 
 | Rule               | Description                   |
-|--------------------|-------------------------------|
+| ------------------ | ----------------------------- |
 | Inbound port names | End with `UseCase` or `Query` |
 | Service names      | End with `Service`            |
 
 **Structural rules:**
 
 | Rule                           | Description                                                                  |
-|--------------------------------|------------------------------------------------------------------------------|
+| ------------------------------ | ---------------------------------------------------------------------------- |
 | Single-port services           | Each application service implements exactly one inbound port                 |
 | No service-to-service coupling | Application services do not import other application services                |
 | Focused adapters               | Each inbound adapter depends on at most one inbound port via its constructor |

@@ -86,14 +86,14 @@ Read the worker file at `$ARGUMENTS` and extract:
 - **Language**: derive from the file extension — `.kt` → Kotlin (mockk), `.java` → Java (Mockito)
 - Worker class name & use-case to be called by the worker
 - Variable injection style:
-    - **`@Variable param: Type`** — injects one variable by name; the test calls `handle(value)` with the raw value
-    - **`@VariableAsType variables: MyVarsClass`** — injects all variables as a typed object; the test instantiates
-      the class and passes it, e.g. `handle(MyVarsClass(subscriptionId = subscriptionId))`
+  - **`@Variable param: Type`** — injects one variable by name; the test calls `handle(value)` with the raw value
+  - **`@VariableAsType variables: MyVarsClass`** — injects all variables as a typed object; the test instantiates
+    the class and passes it, e.g. `handle(MyVarsClass(subscriptionId = subscriptionId))`
 - The `@JobWorker`-annotated `handle` method signature
 - The **return type** of `handle`:
-    - `Unit` (or no explicit return type) → **void worker**: no result assertion needed
-    - `Map<String, Any>` → **output-variable worker**: capture `val result = underTest.handle(...)` and assert the
-      returned map in the Then block
+  - `Unit` (or no explicit return type) → **void worker**: no result assertion needed
+  - `Map<String, Any>` → **output-variable worker**: capture `val result = underTest.handle(...)` and assert the
+    returned map in the Then block
 - The use-case method called inside `handle` and its parameter types
 - Domain wrapper types used (e.g. `SubscriptionId`)
 - Error Handling: If the file at `$ARGUMENTS` cannot be read, stop immediately and ask the user for the correct path.

@@ -1,10 +1,10 @@
 # ⚙️ Common Zeebe
 
-**Common Zeebe** is the backbone module for integrating the **Zeebe process engine** into your services. 
-It streamlines the connection to Zeebe, making it easy to interact with BPMN workflows 
+**Common Zeebe** is the backbone module for integrating the **Zeebe process engine** into your services.
+It streamlines the connection to Zeebe, making it easy to interact with BPMN workflows
 and manage job workers effortlessly.
 
-This module provides everything you need to seamlessly connect, configure, 
+This module provides everything you need to seamlessly connect, configure,
 and interact with the Zeebe engine running in your stack.
 
 ## 🔧 Key Features
@@ -31,7 +31,7 @@ instead of mocking them, which is why we manage worker registration manually wit
 
 ## 📌 How to Use
 
-Include **common-zeebe** as a dependency in your service modules 
+Include **common-zeebe** as a dependency in your service modules
 to integrate and interact with the Zeebe engine efficiently.
 
 ### Example (Gradle Setup):
