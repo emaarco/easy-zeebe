@@ -15,3 +15,7 @@
 .claude/logs
 .claude/settings.local.json
 target
+.claude/logs/
+
+# Node / bpmnlint tooling
+node_modules/

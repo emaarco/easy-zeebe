@@ -58,11 +58,31 @@ Names should be intuitive and reflect the purpose of the element.
 
 A clean layout makes the difference.
 A readable diagram helps all stakeholders understand and analyze processes quickly.
+These are also the conventions the [`/verify-model-visually`](../../.claude/skills/verify-model-visually)
+skill reviews a _rendered_ model against.
 
-- **Reading direction**: model from left to right to support the natural reading flow.
-- **Spacing**: leave sufficient space between elements so the diagram remains clear and uncluttered.
-- **Avoid crossings**: avoid crossing sequence flows. Use intermediate events or sub-processes to reduce
-  complexity when flows would otherwise intersect.
+- **Reading direction**: model from left to right to support the natural reading flow — start on the
+  left, end on the right.
+- **Happy path prominent**: keep the main (happy) path running straight across the middle, and place
+  exceptions and alternative branches visually subordinate above or below it. The arrangement should
+  tell the right story at a glance; backward segments are only acceptable for obvious loops.
+- **Spacing & breathing room**: leave comfortable space between elements so the diagram stays clear and
+  uncluttered. Even a region where nothing technically overlaps should not _read_ as cramped.
+- **Alignment & even spacing**: line up elements that share a row or lane on one axis instead of letting
+  them drift; keep gaps along a path roughly uniform and distribute parallel branches evenly.
+- **No overlaps**: no two shapes — and no label on top of a shape — sit on one another. (A boundary
+  event on its host's border is intended, not an overlap.)
+- **Avoid crossings & through-routing**: sequence flows should not cross each other or run through a
+  shape. Keep flows orthogonal with clean right-angle bends; use intermediate events or sub-processes to
+  reduce complexity when flows would otherwise intersect.
+- **Semantic grouping**: cluster related activities the way the domain expects (a sub-process's steps
+  should read as one unit); don't cram unrelated elements together just because the coordinates allow it.
+- **Readable labels**: every label is legible, sits next to its element, is not clipped or stranded in
+  empty space, and actually says something meaningful (see [Naming Conventions](#naming-conventions)).
+- **Visibility**: every element the process uses is actually drawn — there is no element that executes
+  but has no shape. Compensation handlers (a task on a **dotted association** to a boundary compensation
+  event) and event sub-process starts sit _off_ the main sequence-flow chain by design — that is
+  intentional, not a missing or orphaned element.
 
 ### Notation Elements
 

@@ -211,7 +211,7 @@
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_rejection_di" bpmnElement="serviceTask_SendRejectionMail">
-        <dc:Bounds x="540" y="510" width="100" height="80" />
+        <dc:Bounds x="640" y="510" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_rejected_di" bpmnElement="endEvent_MembershipRejected">
         <dc:Bounds x="702" y="532" width="36" height="36" />
@@ -285,7 +285,7 @@
       <bpmndi:BPMNEdge id="Flow_no_spots_di" bpmnElement="Flow_no_spots">
         <di:waypoint x="450" y="355" />
         <di:waypoint x="450" y="550" />
-        <di:waypoint x="540" y="550" />
+        <di:waypoint x="640" y="550" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="458" y="391" width="15" height="14" />
         </bpmndi:BPMNLabel>

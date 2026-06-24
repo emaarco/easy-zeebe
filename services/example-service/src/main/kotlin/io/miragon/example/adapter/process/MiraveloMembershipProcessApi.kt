@@ -47,6 +47,8 @@ object MiraveloMembershipProcessApi {
 
     val GATEWAY_HAS_EMPTY_SPOTS: ElementId = ElementId("gateway_HasEmptySpots")
 
+    val GATEWAY_REVOKE_REASON: ElementId = ElementId("gateway_RevokeReason")
+
     val SERVICE_TASK_CLAIM_MEMBERSHIP: ElementId = ElementId("serviceTask_ClaimMembership")
 
     val SERVICE_TASK_RE_SEND_CONFIRMATION_MAIL: ElementId =
@@ -157,6 +159,12 @@ object MiraveloMembershipProcessApi {
           targetRef = "userTask_ConfirmMembership",
         )
 
+    val FLOW_GATEWAY_TO_REVOKE: BpmnFlow = BpmnFlow(
+          id = "Flow_gateway_to_revoke",
+          sourceRef = "gateway_RevokeReason",
+          targetRef = "serviceTask_RevokeMembershipRequest",
+        )
+
     val FLOW_NO_SPOTS: BpmnFlow = BpmnFlow(
           id = "Flow_no_spots",
           name = "No",
@@ -174,7 +182,7 @@ object MiraveloMembershipProcessApi {
     val FLOW_REJECTED_TO_REVOKE: BpmnFlow = BpmnFlow(
           id = "Flow_rejected_to_revoke",
           sourceRef = "event_ConfirmationRejected",
-          targetRef = "serviceTask_RevokeMembershipRequest",
+          targetRef = "gateway_RevokeReason",
         )
 
     val FLOW_REJECTION_TO_END: BpmnFlow = BpmnFlow(
@@ -210,7 +218,7 @@ object MiraveloMembershipProcessApi {
     val FLOW_TIMEOUT_TO_REVOKE: BpmnFlow = BpmnFlow(
           id = "Flow_timeout_to_revoke",
           sourceRef = "event_ConfirmationDeadlinePassed",
-          targetRef = "serviceTask_RevokeMembershipRequest",
+          targetRef = "gateway_RevokeReason",
         )
 
     val FLOW_TIMER_TO_RE_SEND: BpmnFlow = BpmnFlow(
@@ -291,6 +299,7 @@ object MiraveloMembershipProcessApi {
         )
 
     val EVENT_CLAIM_COMPENSATION: BpmnRelations = BpmnRelations(
+          name = "Claim made",
           previousElements = emptyList(),
           followingElements = emptyList(),
           parentId = null,
@@ -301,7 +310,7 @@ object MiraveloMembershipProcessApi {
     val EVENT_CONFIRMATION_DEADLINE_PASSED: BpmnRelations = BpmnRelations(
           name = "Deadline passed",
           previousElements = emptyList(),
-          followingElements = listOf("serviceTask_RevokeMembershipRequest"),
+          followingElements = listOf("gateway_RevokeReason"),
           parentId = null,
           attachedToRef = "subProcess_ConfirmMembership",
           attachedElements = emptyList(),
@@ -310,7 +319,7 @@ object MiraveloMembershipProcessApi {
     val EVENT_CONFIRMATION_REJECTED: BpmnRelations = BpmnRelations(
           name = "Confirmation rejected",
           previousElements = emptyList(),
-          followingElements = listOf("serviceTask_RevokeMembershipRequest"),
+          followingElements = listOf("gateway_RevokeReason"),
           parentId = null,
           attachedToRef = "subProcess_ConfirmMembership",
           attachedElements = emptyList(),
@@ -329,6 +338,14 @@ object MiraveloMembershipProcessApi {
           name = "Has empty spots?",
           previousElements = listOf("serviceTask_ClaimMembership"),
           followingElements = listOf("subProcess_ConfirmMembership", "serviceTask_SendRejectionMail"),
+          parentId = null,
+          attachedToRef = null,
+          attachedElements = emptyList(),
+        )
+
+    val GATEWAY_REVOKE_REASON: BpmnRelations = BpmnRelations(
+          previousElements = listOf("event_ConfirmationDeadlinePassed", "event_ConfirmationRejected"),
+          followingElements = listOf("serviceTask_RevokeMembershipRequest"),
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
@@ -363,7 +380,7 @@ object MiraveloMembershipProcessApi {
 
     val SERVICE_TASK_REVOKE_MEMBERSHIP_REQUEST: BpmnRelations = BpmnRelations(
           name = "Revoke Membership Request",
-          previousElements = listOf("event_ConfirmationDeadlinePassed", "event_ConfirmationRejected"),
+          previousElements = listOf("gateway_RevokeReason"),
           followingElements = listOf("endEvent_MembershipDeclined"),
           parentId = null,
           attachedToRef = null,

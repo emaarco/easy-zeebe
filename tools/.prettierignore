@@ -1,0 +1,3 @@
+# Prettier ignores node_modules and VCS dirs by default; these are the extras.
+.context/
+**/build/

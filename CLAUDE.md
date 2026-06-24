@@ -22,16 +22,20 @@ It consists of three Gradle modules and a React frontend:
 ### Starting the Application
 
 1. **Start Infrastructure**:
+
    ```bash
    cd stack
    docker-compose up -d
    ```
+
    This starts PostgreSQL, Camunda Platform (unified Zeebe, Operate, Tasklist), and Elasticsearch.
 
 2. **Run Backend**:
+
    ```bash
    ./gradlew :services:example-service:bootRun
    ```
+
    Application runs on port 8081.
 
 3. **Run Frontend** (in separate terminal):
@@ -77,8 +81,8 @@ When writing code, you must comply with the following architecture guidelines:
 - **Domain**: Core business entities (Email, Name, NewsletterSubscription, etc.)
 - **Application**: Use cases and services
 - **Adapters**:
-    - Inbound: REST controllers and Zeebe job workers
-    - Outbound: Database persistence and Zeebe process adapters
+  - Inbound: REST controllers and Zeebe job workers
+  - Outbound: Database persistence and Zeebe process adapters
 
 ### Key Components
 
@@ -106,6 +110,23 @@ When writing code, you must comply with the following architecture guidelines:
 - BPMN files located in `src/main/resources/bpmn/`
 - Custom Gradle plugin generates Kotlin models from BPMN files
 - Process definitions automatically deployed on application startup
+
+### BPMN Quality Gates
+
+BPMN edits can break in ways the XML hides (elements that execute but never render, overlapping
+or crossing shapes). Two gates guard against this:
+
+- **Lint owns geometry.** After **every** BPMN edit run `npm --prefix tools run lint:bpmn`
+  (run-once setup: `npm --prefix tools install`). bpmnlint plus two custom rules in
+  `tools/bpmnlint-plugin-local/` catch invisible elements, overlaps, crossing flows, and
+  flows routed through a shape; config in `tools/.bpmnlintrc`. Treat a non-zero exit as a blocker.
+- **`/verify-model-visually` owns judgment.** Renders the model and reviews the picture for what
+  geometry can't decide (grouping, intent, spacing, labels). Run it after non-trivial layout changes.
+- **`/fix-model-layout` fixes what they flag** (DI-only, so semantics stay safe), escalating:
+  (1) `npm --prefix tools run fix:bpmn -- <file>` re-routes affected edges; (2) hand-edit DI
+  coordinates; (3) `npm --prefix tools run auto-layout:bpmn -- <file>` regenerates the whole layout.
+
+Reproducible probes live in `docs/bpmn-quality-gates/` (see `docs/bpmn-quality-gates/README.md`).
 
 ## Testing
 
@@ -150,7 +171,7 @@ This repo ships with custom Claude Code skills in `.claude/skills/`. When a task
 instead of implementing manually.
 
 | Skill                      | Command                       | When to use                                                  |
-|----------------------------|-------------------------------|--------------------------------------------------------------|
+| -------------------------- | ----------------------------- | ------------------------------------------------------------ |
 | create-ticket              | `/create-ticket`              | Create a GitHub issue (feature, bug, or refactor)            |
 | create-worker              | `/create-worker`              | Generate @JobWorker classes (inbound adapters) only          |
 | create-process-adapter     | `/create-process-adapter`     | Generate a process out-adapter (outbound adapter) only       |
@@ -163,12 +184,14 @@ instead of implementing manually.
 | create-adr                 | `/create-adr`                 | Write a new Architectural Decision Record in docs/adr/       |
 | test-rest-adapter          | `/test-rest-adapter`          | Generate tests for a REST controller (inbound adapter)       |
 | test-persistence-adapter   | `/test-persistence-adapter`   | Generate tests for a JPA persistence adapter                 |
+| verify-model-visually      | `/verify-model-visually`      | Visually review a rendered BPMN diagram after editing it     |
+| fix-model-layout           | `/fix-model-layout`           | Fix BPMN layout issues lint/verify flagged (3 strategies)    |
 
 ## Subagents
 
 This repo also ships a custom Claude Code subagent in `.claude/agents/`. Subagents run in their own isolated context
 with restricted tool access and are invoked automatically by Claude when relevant, or explicitly on request.
 
-| Subagent         | When to use                                                                                                                                              |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Subagent         | When to use                                                                                                                                                    |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `review-process` | Review a BPMN model and its glue-code for consistency. Ask: "review the membership process" or "use the review-process subagent to audit the miravelo process" |
