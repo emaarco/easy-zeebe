@@ -23,7 +23,7 @@ a curated collection of practices and patterns you can adopt in your own project
 
 [Miravelo](https://github.com/Miragon) — a lifestyle shop for people who own both a gravel bike and a road bike — is launching the **MiraVelo Inner Circle**: an exclusive membership for true fans. One thousand spots, because scarcity is a business model and someone read a book about luxury brands.
 
-> *"We're not exclusive because we're good. We're exclusive because the counter in the database is set to 1000."*
+> _"We're not exclusive because we're good. We're exclusive because the counter in the database is set to 1000."_
 > — Honest comment from Sprint Planning
 
 A **gateway** decides who gets in. No spot? Rejection mail. Got a spot? A **Confirm Membership sub-process** follows — with a daily re-send timer, an interrupting 3½-day deadline, and an explicit rejection escape hatch. Any exit triggers a compensating `Revoke Claim` task.
@@ -108,7 +108,7 @@ See [`services/common-architecture-test/README.md`](services/common-architecture
 Key architectural choices are documented as **Architecture Decision Records (ADRs)** using the
 [MADR](https://adr.github.io/madr/) format.
 Each ADR captures the context, the decision, and the reasoning behind it —
-so future contributors understand *why* the code is structured the way it is, not just *how*.
+so future contributors understand _why_ the code is structured the way it is, not just _how_.
 
 - [`docs/adr/`](docs/adr/) — all recorded decisions
 - The `/create-adr` skill generates new ADRs from a template, so adding one is as easy as describing the decision.
@@ -184,7 +184,7 @@ Learn more in the [Claude Code Skills docs](https://code.claude.com/docs/en/skil
 **Zeebe skills** — cover the full Zeebe development lifecycle:
 
 | Command                   | What it does                                                            |
-|---------------------------|-------------------------------------------------------------------------|
+| ------------------------- | ----------------------------------------------------------------------- |
 | `/create-worker`          | Generate or update a `@JobWorker` class (inbound adapter)               |
 | `/create-process-adapter` | Generate or update a process out-adapter (outbound adapter)             |
 | `/automate-process`       | Scaffold workers + process adapter (combines the two `create-*` skills) |
@@ -213,9 +213,9 @@ Subagents run in their own isolated context with restricted tool access,
 and are invoked automatically by the agent when relevant — or explicitly on request.
 Learn more about [Claude Code Subagents](https://code.claude.com/docs/en/sub-agents).
 
-| Subagent         | What it does                                                                                                                           |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------------|
-| `review-process` | Audits a BPMN model and its glue-code for consistency and test coverage against the styleguide. Ask: *"review the MiraVelo membership process"* |
+| Subagent         | What it does                                                                                                                                    |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `review-process` | Audits a BPMN model and its glue-code for consistency and test coverage against the styleguide. Ask: _"review the MiraVelo membership process"_ |
 
 ## 🤝 Contributing
 
@@ -226,4 +226,4 @@ please open an issue or a pull request on [GitHub](https://github.com/Miragon/ea
 
 ---
 
-🥨 *Named "easy-zeebe" as a challenge. You decide if we won.*
+🥨 _Named "easy-zeebe" as a challenge. You decide if we won._

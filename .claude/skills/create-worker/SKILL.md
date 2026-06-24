@@ -72,9 +72,9 @@ the matching Kotlin constant for code generation.
 - If a task type was provided in `$ARGUMENTS`, select the matching service task. Otherwise present the list and ask the
   user to select one.
 - From the selected service task extract:
-    - The task type string value from `<zeebe:taskDefinition type="...">` — this is the authoritative task type
-    - `<zeebe:input>` mappings → the task's **input parameters** (will become `@Variable` parameters)
-    - `<zeebe:output>` mappings → the task's **output parameters** (drive the return type and `mapOf(...)` keys)
+  - The task type string value from `<zeebe:taskDefinition type="...">` — this is the authoritative task type
+  - `<zeebe:input>` mappings → the task's **input parameters** (will become `@Variable` parameters)
+  - `<zeebe:output>` mappings → the task's **output parameters** (drive the return type and `mapOf(...)` keys)
 
 **From the ProcessApi (for code generation only):**
 
@@ -89,9 +89,9 @@ the matching Kotlin constant for code generation.
   `NEWSLETTER_SEND_WELCOME_MAIL` → `SendWelcomeMailWorker`).
 - Derive the base package from the ProcessApi package (e.g. `io.miragon.example.adapter.process` →
   `io.miragon.example`):
-    - Worker package: `<base>.adapter.inbound.zeebe`
-    - Source root: derived from the ProcessApi file path (e.g. `services/example-service/src/main/kotlin/`)
-    - Expected target file: `<source-root>/<package-path>/<WorkerName>.kt`
+  - Worker package: `<base>.adapter.inbound.zeebe`
+  - Source root: derived from the ProcessApi file path (e.g. `services/example-service/src/main/kotlin/`)
+  - Expected target file: `<source-root>/<package-path>/<WorkerName>.kt`
 - Check whether the file exists at the expected path. If not found there, Glob `**/<WorkerName>.kt` within the same
   service module to check whether it exists elsewhere.
 

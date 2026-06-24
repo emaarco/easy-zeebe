@@ -12,16 +12,16 @@ It is divided into three parts:
 ## Table of Contents
 
 - [Modelling](#modelling)
-    - [Naming Conventions](#naming-conventions)
-    - [Layout Guidelines](#layout-guidelines)
-    - [Notation Elements](#notation-elements)
+  - [Naming Conventions](#naming-conventions)
+  - [Layout Guidelines](#layout-guidelines)
+  - [Notation Elements](#notation-elements)
 - [Technical Configuration](#technical-configuration)
-    - [Element IDs](#element-ids)
-    - [Message IDs](#message-ids)
-    - [Worker IDs](#worker-ids)
+  - [Element IDs](#element-ids)
+  - [Message IDs](#message-ids)
+  - [Worker IDs](#worker-ids)
 - [Automation](#automation)
-    - [Process Variables](#process-variables)
-    - [Worker Design](#worker-design)
+  - [Process Variables](#process-variables)
+  - [Worker Design](#worker-design)
 
 ---
 
@@ -100,7 +100,7 @@ The table below is illustrative — it shows the pattern for common element type
 Apply the same `Type_Name` structure to any element not listed here.
 
 | Element              | ID Convention             | Example                          |
-|----------------------|---------------------------|----------------------------------|
+| -------------------- | ------------------------- | -------------------------------- |
 | Start Event          | `startEvent_State`        | `startEvent_SubscriptionStarted` |
 | Intermediate Event   | `event_State`             | `event_ConfirmationReceived`     |
 | End Event            | `endEvent_State`          | `endEvent_SubscriptionCompleted` |

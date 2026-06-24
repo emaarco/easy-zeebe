@@ -74,7 +74,7 @@ Read the adapter file at `$ARGUMENTS` and extract:
 - The ProcessApi object imported (e.g. `NewsletterSubscriptionProcessApi`)
 - Each public method: name, parameters, return type
 - Which `ProcessEngineApi` methods are called (`startProcess`, `sendMessage`, etc.)
-- Which ProcessApi constants are referenced (PROCESS_ID, Messages.*, Variables.*, etc.)
+- Which ProcessApi constants are referenced (PROCESS*ID, Messages.*, Variables.\_, etc.)
 
 Then read the ProcessApi file to confirm the exact constant names and nested object structure.
 

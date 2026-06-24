@@ -28,7 +28,7 @@ We will structure `example-service` using Hexagonal Architecture (Ports and Adap
 layout:
 
 | Layer             | Package                                        | Contents                                             |
-|-------------------|------------------------------------------------|------------------------------------------------------|
+| ----------------- | ---------------------------------------------- | ---------------------------------------------------- |
 | Domain            | `io.miragon.example.domain`                    | Core entities and value objects                      |
 | Application       | `io.miragon.example.application.service`       | Use-case orchestration (implements inbound ports)    |
 | Inbound ports     | `io.miragon.example.application.port.inbound`  | Use-case interfaces driven by external actors        |

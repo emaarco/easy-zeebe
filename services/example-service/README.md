@@ -18,13 +18,13 @@ Key steps:
 1. **Claim Membership** — reserves one of the 1000 spots; sets `hasEmptySpots`.
 2. **No spots** → **Send Rejection Mail** → `Membership rejected`.
 3. **Spot available** → opens the **Confirm Membership** sub-process:
-    - **Send Confirmation Mail** → wait for the user via a **user task**.
-    - A **non-interrupting daily timer** fires `Re-Send Confirmation Mail` to nudge the user.
-    - An **interrupting 3½-day timer** aborts the sub-process and flows into `Revoke Membership Request`.
-    - A **`miravelo.confirmationRejected` message boundary event** aborts the sub-process on user rejection,
-      also flowing into `Revoke Membership Request`.
-    - On abort/rejection, **compensation** triggers `Revoke Claim` so the spot is released back to the pool,
-      and the process ends on `Membership declined`.
+   - **Send Confirmation Mail** → wait for the user via a **user task**.
+   - A **non-interrupting daily timer** fires `Re-Send Confirmation Mail` to nudge the user.
+   - An **interrupting 3½-day timer** aborts the sub-process and flows into `Revoke Membership Request`.
+   - A **`miravelo.confirmationRejected` message boundary event** aborts the sub-process on user rejection,
+     also flowing into `Revoke Membership Request`.
+   - On abort/rejection, **compensation** triggers `Revoke Claim` so the spot is released back to the pool,
+     and the process ends on `Membership declined`.
 4. **Happy path** (user confirmed) → **Send Welcome Mail** → `Membership activated` (throws the
    `miravelo.membershipActivated` signal).
 

@@ -11,6 +11,6 @@ After that it completes the job and returns control to the engine.
 This is the mirror of a process adapter:
 
 | Direction    | Pattern         | Who initiates the call?                     |
-|--------------|-----------------|---------------------------------------------|
+| ------------ | --------------- | ------------------------------------------- |
 | **Inbound**  | Job Worker      | The engine calls your code (or you poll it) |
 | **Outbound** | Process Adapter | Your code calls the engine                  |

@@ -17,7 +17,7 @@ job workers, process out-adapter, inbound/outbound port interfaces, and applicat
 - Inbound Workers: stored in `adapter/inbound/zeebe` with one `@JobWorker` per serviceTask
 
 | Layer                | Location                     | What                                     |
-|----------------------|------------------------------|------------------------------------------|
+| -------------------- | ---------------------------- | ---------------------------------------- |
 | Inbound workers      | `adapter/inbound/zeebe/`     | One `@JobWorker` class per service task  |
 | Outbound adapter     | `adapter/outbound/zeebe/`    | One process out-adapter class            |
 | Inbound ports        | `application/port/inbound/`  | One use-case interface per worker        |

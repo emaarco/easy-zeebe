@@ -23,7 +23,7 @@ Invoke with `/skill-name` in the Claude Code chat.
 **Zeebe skills:**
 
 | Command                   | Purpose                                                  |
-|---------------------------|----------------------------------------------------------|
+| ------------------------- | -------------------------------------------------------- |
 | `/create-worker`          | Scaffold a `@JobWorker` inbound adapter                  |
 | `/create-process-adapter` | Scaffold a Zeebe process outbound adapter                |
 | `/automate-process`       | Scaffold full hexagonal glue-code for a BPMN process     |
@@ -44,7 +44,7 @@ Invoke with `/skill-name` in the Claude Code chat.
 Invoked automatically by Claude when relevant, or explicitly on request.
 
 | Agent            | Definition file            | Purpose                                                     |
-|------------------|----------------------------|-------------------------------------------------------------|
+| ---------------- | -------------------------- | ----------------------------------------------------------- |
 | `review-process` | `agents/review-process.md` | Reviews BPMN model + glue-code for consistency              |
 | `review-skill`   | `agents/review-skills.md`  | Reviews a `SKILL.md` file against the agent skills standard |
 
@@ -82,13 +82,13 @@ description: Helps with Zeebe.   # Too vague — no trigger phrases
 - Put critical instructions near the top under `## IMPORTANT`.
 - Keep `SKILL.md` under 500 lines; move deep reference docs to a `references/` sub-folder.
 - Include concrete examples (input → output) and explicit error-handling steps.
-- End with: *"If anything is unclear, ask before proceeding."*
+- End with: _"If anything is unclear, ask before proceeding."_
 
 ### Invocation control
 
 | Frontmatter                      | User can invoke | Claude auto-invokes |
-|----------------------------------|-----------------|---------------------|
-| *(default)*                      | Yes             | Yes                 |
+| -------------------------------- | --------------- | ------------------- |
+| _(default)_                      | Yes             | Yes                 |
 | `disable-model-invocation: true` | Yes             | No                  |
 | `user-invocable: false`          | No              | Yes                 |
 
