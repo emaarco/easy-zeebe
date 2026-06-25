@@ -34,4 +34,8 @@ jobs:
       # Step 5: Lint BPMN models (fails the build on any error)
       - name: Lint BPMN models
         working-directory: tools
-        run: npm run lint:bpmn
+        run: |
+          echo "BPMN models under test:"
+          find ../services -path '*/src/main/resources/bpmn/*.bpmn'
+          echo "Total: $(find ../services -path '*/src/main/resources/bpmn/*.bpmn' | wc -l | tr -d ' ') model(s)"
+          npm run lint:bpmn
