@@ -177,9 +177,6 @@
           <dc:Bounds x="569" y="358" width="63" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_sendConfirmation_di" bpmnElement="serviceTask_SendConfirmationMail">
-        <dc:Bounds x="670" y="293" width="100" height="80" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_userTask_di" bpmnElement="userTask_ConfirmMembership">
         <dc:Bounds x="810" y="293" width="100" height="80" />
       </bpmndi:BPMNShape>

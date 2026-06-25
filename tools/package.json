@@ -1,0 +1,22 @@
+{
+  "name": "easy-zeebe-tooling",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dev tooling for Easy Zeebe: deterministic BPMN linting (bpmnlint) and markdown formatting (prettier). Run from the repo root via `npm --prefix tools run <script>`.",
+  "scripts": {
+    "lint:bpmn": "bpmnlint \"../services/**/src/main/resources/bpmn/*.bpmn\"",
+    "lint:bpmn:probes": "bpmnlint \"../docs/bpmn-quality-gates/probes/**/*.bpmn\"",
+    "fix:bpmn": "node bpmn-fix/fix.mjs",
+    "auto-layout:bpmn": "node bpmn-fix/layout.mjs",
+    "format": "cd .. && prettier --write --ignore-path tools/.prettierignore \"**/*.md\"",
+    "format:check": "cd .. && prettier --check --ignore-path tools/.prettierignore \"**/*.md\""
+  },
+  "devDependencies": {
+    "bpmn-auto-layout": "1.3.0",
+    "bpmn-moddle": "10.0.0",
+    "bpmnlint": "11.12.1",
+    "bpmnlint-plugin-local": "file:bpmnlint-plugin-local",
+    "diagram-js": "15.18.0",
+    "prettier": "3.8.4"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "extends": "bpmnlint:recommended",
+  "rules": {
+    "label-required": "error",
+    "no-disconnected": "error",
+    "no-implicit-split": "error",
+    "no-overlapping-elements": "error",
+    "local/no-crossing-flows": "error",
+    "local/flow-through-element": "error"
+  }
+}

@@ -296,6 +296,7 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_welcome_to_activated_di" bpmnElement="Flow_welcome_to_activated">
         <di:waypoint x="1210" y="330" />
+        <di:waypoint x="1236" y="560" />
         <di:waypoint x="1262" y="330" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_rejection_to_end_di" bpmnElement="Flow_rejection_to_end">

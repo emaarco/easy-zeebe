@@ -284,7 +284,8 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_no_spots_di" bpmnElement="Flow_no_spots">
         <di:waypoint x="450" y="355" />
-        <di:waypoint x="450" y="550" />
+        <di:waypoint x="800" y="355" />
+        <di:waypoint x="800" y="550" />
         <di:waypoint x="540" y="550" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="458" y="391" width="15" height="14" />
