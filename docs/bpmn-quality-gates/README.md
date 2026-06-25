@@ -28,6 +28,35 @@ shape slip through. Two small in-repo custom rules — `local/no-crossing-flows`
 [`probes.md`](./probes.md#custom-layout-rules) and
 [`tools/bpmnlint-plugin-local/`](../../tools/bpmnlint-plugin-local).)
 
+## In CI
+
+The geometric net is cheap and deterministic, so it runs on **every pull request** — not just
+on the agent's machine. The [`lint-bpmn-models`](../../.github/workflows/lint-bpmn-models.yml)
+workflow fires on PRs targeting `main` and is the backstop for the one failure mode this whole
+folder is about: a layout bug invisible in the XML diff slips past human review precisely because
+a reviewer reads the diff, not the rendered picture. A red check is impossible to miss; a subtly
+broken diagram in a diff is easy to wave through. The job:
+
+1. **Pins dependencies** (`miragon/pin-npm-dependencies`) — the lint result must be reproducible,
+   so a floating transitive bump can't silently change what the rules catch. See the
+   [package.json version-pinning convention](../../tools/package.json).
+2. **Installs the `tools/` toolchain** (`npm ci` against the committed lockfile), then logs the
+   models under test and runs `npm run lint:bpmn`.
+
+bpmnlint prints **nothing** on a clean run and has no file-count output, so a green job would
+otherwise be silent about what it checked. The lint step therefore `find`s and counts the models
+before invoking the linter — so the log always shows what was actually under test:
+
+```
+BPMN models under test:
+../services/example-service/src/main/resources/bpmn/membership.bpmn
+Total: 1 model(s)
+```
+
+The visual review (`/verify-model-visually`) is **not** in CI — it needs a multimodal model and
+human-style judgment, so it stays a local, agent-driven gate. CI owns only what a coordinate
+formula can settle.
+
 ## The probes
 
 Four copies of the membership model, each isolating one failure so you can see which net
