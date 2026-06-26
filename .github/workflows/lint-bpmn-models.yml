@@ -1,12 +1,13 @@
-name: Lint BPMN models
+name: BPMN quality gates
 
 on:
   pull_request:
     branches: [ main ]
 
 jobs:
+  # Gate 1 — deterministic geometry checks (bpmnlint). Hard gate: any error fails.
   lint-bpmn:
-    name: Lint BPMN models
+    name: Lint BPMN models (geometry)
     runs-on: ubuntu-24.04
 
     steps:
@@ -39,3 +40,104 @@ jobs:
           find ../services -path '*/src/main/resources/bpmn/*.bpmn'
           echo "Total: $(find ../services -path '*/src/main/resources/bpmn/*.bpmn' | wc -l | tr -d ' ') model(s)"
           npm run lint:bpmn
+
+  # Gate 2 — AI visual judgment (verify-model-visually skill). Soft gate: fails only on
+  # high-severity findings; medium/low are reported as warnings + a PR comment.
+  visual-review:
+    name: Visual review (AI judgment)
+    needs: lint-bpmn
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      # Only spend an LLM run when a BPMN model actually changed in this PR.
+      - name: Detect changed BPMN models
+        id: changed
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            bpmn:
+              - 'services/**/src/main/resources/bpmn/*.bpmn'
+
+      - name: Set up Node.js
+        if: steps.changed.outputs.bpmn == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: tools/package-lock.json
+
+      - name: Install Dependencies
+        if: steps.changed.outputs.bpmn == 'true'
+        working-directory: tools
+        run: npm ci
+
+      # Render + judge. Uses the runner's preinstalled Chrome instead of downloading
+      # Chromium (faster, no flaky postinstall). Claude writes its verdict to verdict.json.
+      - name: Run visual review
+        if: steps.changed.outputs.bpmn == 'true'
+        uses: anthropics/claude-code-action@v1.0.140
+        env:
+          PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: '--allowedTools "Bash,Read,Glob,Write"'
+          prompt: |
+            Run the `verify-model-visually` skill on every BPMN model under
+            services/**/src/main/resources/bpmn/*.bpmn.
+
+            For each model: render it to PNG with `npx bpmn-to-image` (run it from the
+            tools/ directory), then read the rendered image and
+            docs/bpmn-styleguide/styleguide.md (the Layout Guidelines section) and judge
+            the layout — visibility, overlaps, crossing flows, spacing, and label quality.
+            Review the rendered picture, never the XML.
+
+            Then write a single JSON file to verdict.json at the repo root with EXACTLY
+            this shape (no prose around it):
+              {
+                "verdict": "pass" | "fail",
+                "findings": [
+                  {
+                    "model": "<bpmn file path>",
+                    "element": "<element or flow name>",
+                    "issue": "<what is wrong>",
+                    "rule": "<styleguide rule>",
+                    "severity": "high" | "medium" | "low"
+                  }
+                ]
+              }
+
+            Set "verdict" to "fail" ONLY if at least one finding has severity "high"
+            (e.g. an invisible/undrawn element, a shape overlap, or a flow crossing a
+            shape that the linter somehow missed). Cosmetic spacing/label issues are
+            "medium" or "low" and must NOT fail the verdict.
+
+            Finally, post a short summary comment on the PR with the findings.
+
+      # Deterministic enforcement: the pipeline decision stays in our hands, not the model's.
+      - name: Enforce verdict
+        if: steps.changed.outputs.bpmn == 'true'
+        run: |
+          if [ ! -f verdict.json ]; then
+            echo "::error::The visual review produced no verdict.json — treating as failure."
+            exit 1
+          fi
+          echo "Verdict file:"
+          cat verdict.json
+          echo
+
+          jq -r '.findings[]? | "::warning::[\(.severity)] \(.model) — \(.element): \(.issue) (\(.rule))"' verdict.json
+
+          verdict=$(jq -r '.verdict' verdict.json)
+          if [ "$verdict" = "fail" ]; then
+            echo "::error::Visual review found high-severity layout issues. See warnings above."
+            exit 1
+          fi
+          echo "✅ Visual review passed."
