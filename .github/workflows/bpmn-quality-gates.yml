@@ -39,7 +39,7 @@ jobs:
           find ../services -path '*/src/main/resources/bpmn/*.bpmn'
           set +e
           set -o pipefail
-          npm run lint:bpmn 2>&1 | sed -E 's/\x1b\[[0-9;]*m//g' | tee /tmp/lint-report.txt
+          npm run --silent lint:bpmn 2>&1 | sed -E 's/\x1b\[[0-9;]*m//g' | tee /tmp/lint-report.txt
           code=$?
           {
             echo 'report<<LINTEOF'
