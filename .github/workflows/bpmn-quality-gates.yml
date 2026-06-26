@@ -3,26 +3,23 @@ name: BPMN quality gates
 on:
   pull_request:
     branches: [ main ]
-    # Both gates only run when a BPMN model actually changed in the PR.
     paths:
       - 'services/**/src/main/resources/bpmn/*.bpmn'
 
 jobs:
-  # Gate 1 — deterministic geometry checks (bpmnlint). Hard gate: any error fails.
   lint-bpmn:
     name: Lint BPMN models (geometry)
     runs-on: ubuntu-24.04
+    outputs:
+      report: ${{ steps.lint.outputs.report }}
 
     steps:
-      # Step 1: Checkout code
       - name: Checkout Code
         uses: actions/checkout@v6
 
-      # Step 2: Fail the build if any npm dependency is not pinned to an exact version
       - name: Verify Pinned Dependencies
         uses: miragon/pin-npm-dependencies@v1
 
-      # Step 3: Set up Node.js (npm tooling lives in tools/)
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
@@ -30,30 +27,37 @@ jobs:
           cache: 'npm'
           cache-dependency-path: tools/package-lock.json
 
-      # Step 4: Install dependencies (bpmnlint)
       - name: Install Dependencies
         working-directory: tools
         run: npm ci
 
-      # Step 5: Lint BPMN models (fails the build on any error)
       - name: Lint BPMN models
+        id: lint
         working-directory: tools
         run: |
           echo "BPMN models under test:"
           find ../services -path '*/src/main/resources/bpmn/*.bpmn'
-          echo "Total: $(find ../services -path '*/src/main/resources/bpmn/*.bpmn' | wc -l | tr -d ' ') model(s)"
-          npm run lint:bpmn
+          set +e
+          set -o pipefail
+          npm run --silent lint:bpmn 2>&1 | sed -E 's/\x1b\[[0-9;]*m//g' | tee /tmp/lint-report.txt
+          code=$?
+          {
+            echo 'report<<LINTEOF'
+            cat /tmp/lint-report.txt
+            echo LINTEOF
+          } >> "$GITHUB_OUTPUT"
+          exit $code
 
-  # Gate 2 — AI visual judgment (verify-model-visually skill). Soft gate: fails only on
-  # high-severity findings; medium/low are reported as warnings + a PR comment.
   visual-review:
     name: Visual review (AI judgment)
     needs: lint-bpmn
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      pull-requests: write
       id-token: write
+    outputs:
+      verdict: ${{ steps.collect.outputs.verdict }}
+      summary: ${{ steps.collect.outputs.summary }}
 
     steps:
       - name: Checkout Code
@@ -70,49 +74,71 @@ jobs:
         working-directory: tools
         run: npm ci
 
-      # Render + judge. Uses the runner's preinstalled Chrome instead of downloading
-      # Chromium (faster, no flaky postinstall). Claude writes its verdict to verdict.json.
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
       - name: Run visual review
-        uses: anthropics/claude-code-action@v1.0.140
         env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
           PUPPETEER_SKIP_DOWNLOAD: 'true'
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: '--allowedTools "Bash,Read,Glob,Write"'
-          prompt: |
-            Run the `verify-model-visually` skill on every BPMN model under
-            services/**/src/main/resources/bpmn/*.bpmn.
+        run: |
+          cat > /tmp/review-prompt.md <<'PROMPT'
+          Review every BPMN model under services/**/src/main/resources/bpmn/*.bpmn
+          for visual / layout defects.
 
-            For each model: render it to PNG with `npx bpmn-to-image` (run it from the
-            tools/ directory), then read the rendered image and
-            docs/bpmn-styleguide/styleguide.md (the Layout Guidelines section) and judge
-            the layout — visibility, overlaps, crossing flows, spacing, and label quality.
-            Review the rendered picture, never the XML.
+          Use the `verify-model-visually` skill (invoke it via the Skill tool) to do
+          the actual review — it owns the method: render the model, inspect the
+          rendered picture, and check it against the styleguide. Apply it to each
+          model. Do not reimplement the method here; rely on the skill.
 
-            Then write a single JSON file to verdict.json at the repo root with EXACTLY
-            this shape (no prose around it):
+          Then, based on the skill's findings, write TWO files at the repo root and
+          post nothing yourself:
+
+            verdict.json — EXACTLY this shape, no prose around it:
               {
                 "verdict": "pass" | "fail",
                 "findings": [
-                  {
-                    "model": "<bpmn file path>",
-                    "element": "<element or flow name>",
-                    "issue": "<what is wrong>",
-                    "rule": "<styleguide rule>",
-                    "severity": "high" | "medium" | "low"
-                  }
+                  { "model": "<path>", "element": "<name>", "issue": "<what>",
+                    "rule": "<styleguide rule>", "severity": "high|medium|low" }
                 ]
               }
+            Set "verdict" to "fail" if and only if at least one finding is high
+            severity — an invisible/undrawn element, any shape-or-label overlap, or a
+            flow crossing or routed through a shape. Cosmetic spacing, routing length,
+            and naming nits are medium/low and must not fail the verdict.
 
-            Set "verdict" to "fail" ONLY if at least one finding has severity "high"
-            (e.g. an invisible/undrawn element, a shape overlap, or a flow crossing a
-            shape that the linter somehow missed). Cosmetic spacing/label issues are
-            "medium" or "low" and must NOT fail the verdict.
+            verdict.md — use EXACTLY this template every time, so the posted comment
+            always looks the same. Fill in the values; add no extra sections or prose.
+            In the Model column put ONLY a markdown link whose text is the bare file
+            name and whose target is the repo-relative path — not the full path as
+            text — e.g. [membership.bpmn](services/example-service/src/main/resources/bpmn/membership.bpmn).
 
-            Finally, post a short summary comment on the PR with the findings.
+              **Verdict:** <✅ PASS | ❌ FAIL>
 
-      # Deterministic enforcement: the pipeline decision stays in our hands, not the model's.
+              | Severity | Model | Element | Issue | Rule |
+              | --- | --- | --- | --- | --- |
+              | <one row per finding, ordered high → low; Model = [name](path)> |
+
+              If there are no findings, use a single row:
+              | – | – | – | No issues found. | – |
+          PROMPT
+          claude -p "$(cat /tmp/review-prompt.md)" \
+            --allowedTools "Bash Read Glob Write Skill" \
+            --dangerously-skip-permissions
+
+      - name: Collect results
+        id: collect
+        if: always()
+        run: |
+          verdict=$(jq -r '.verdict' verdict.json 2>/dev/null || echo error)
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+          {
+            echo 'summary<<SUMEOF'
+            if [ -f verdict.md ]; then cat verdict.md; else echo "_No verdict produced._"; fi
+            echo SUMEOF
+          } >> "$GITHUB_OUTPUT"
+
       - name: Enforce verdict
         run: |
           if [ ! -f verdict.json ]; then
@@ -131,3 +157,53 @@ jobs:
             exit 1
           fi
           echo "✅ Visual review passed."
+
+  post-comment:
+    name: Post quality-gates comment
+    needs: [ lint-bpmn, visual-review ]
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Build and post sticky comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINT_RESULT: ${{ needs.lint-bpmn.result }}
+          LINT_REPORT: ${{ needs.lint-bpmn.outputs.report }}
+          VIS_RESULT: ${{ needs.visual-review.result }}
+          VIS_SUMMARY: ${{ needs.visual-review.outputs.summary }}
+        run: |
+          {
+            echo "## BPMN quality gates"
+            echo
+
+            if [ "$LINT_RESULT" = "success" ]; then
+              echo "### Geometry (bpmnlint) — ✅ passed"
+            elif [ "$LINT_RESULT" = "failure" ]; then
+              echo "### Geometry (bpmnlint) — ❌ failed"
+              echo
+              echo '```'
+              printf '%s\n' "$LINT_REPORT"
+              echo '```'
+            else
+              echo "### Geometry (bpmnlint) — ⤼ $LINT_RESULT"
+            fi
+            echo
+
+            echo "### Visual review (AI judgment)"
+            echo
+            if [ "$VIS_RESULT" = "skipped" ]; then
+              echo "⤼ skipped — the geometry gate failed; fix that first."
+            elif [ -n "$VIS_SUMMARY" ]; then
+              printf '%s\n' "$VIS_SUMMARY"
+            else
+              echo "⚠️ no result produced."
+            fi
+          } > /tmp/comment.md
+
+          PR="${{ github.event.pull_request.number }}"
+          REPO="${{ github.repository }}"
+          gh pr comment "$PR" -R "$REPO" --edit-last -F /tmp/comment.md \
+            || gh pr comment "$PR" -R "$REPO" -F /tmp/comment.md
