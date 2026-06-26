@@ -10,6 +10,8 @@ jobs:
   lint-bpmn:
     name: Lint BPMN models (geometry)
     runs-on: ubuntu-24.04
+    outputs:
+      report: ${{ steps.lint.outputs.report }}
 
     steps:
       - name: Checkout Code
@@ -30,12 +32,21 @@ jobs:
         run: npm ci
 
       - name: Lint BPMN models
+        id: lint
         working-directory: tools
         run: |
           echo "BPMN models under test:"
           find ../services -path '*/src/main/resources/bpmn/*.bpmn'
-          echo "Total: $(find ../services -path '*/src/main/resources/bpmn/*.bpmn' | wc -l | tr -d ' ') model(s)"
-          npm run lint:bpmn
+          set +e
+          set -o pipefail
+          npm run lint:bpmn 2>&1 | sed -E 's/\x1b\[[0-9;]*m//g' | tee /tmp/lint-report.txt
+          code=$?
+          {
+            echo 'report<<LINTEOF'
+            cat /tmp/lint-report.txt
+            echo LINTEOF
+          } >> "$GITHUB_OUTPUT"
+          exit $code
 
   visual-review:
     name: Visual review (AI judgment)
@@ -43,8 +54,10 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      pull-requests: write
       id-token: write
+    outputs:
+      verdict: ${{ steps.collect.outputs.verdict }}
+      summary: ${{ steps.collect.outputs.summary }}
 
     steps:
       - name: Checkout Code
@@ -101,8 +114,6 @@ jobs:
             name and whose target is the repo-relative path — not the full path as
             text — e.g. [membership.bpmn](services/example-service/src/main/resources/bpmn/membership.bpmn).
 
-              ## BPMN Visual Review
-
               **Verdict:** <✅ PASS | ❌ FAIL>
 
               | Severity | Model | Element | Issue | Rule |
@@ -116,19 +127,17 @@ jobs:
             --allowedTools "Bash Read Glob Write Skill" \
             --dangerously-skip-permissions
 
-      - name: Post review comment
+      - name: Collect results
+        id: collect
         if: always()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ ! -f verdict.md ]; then
-            echo "No verdict.md produced — nothing to post."
-            exit 0
-          fi
-          PR="${{ github.event.pull_request.number }}"
-          # Overwrite our previous review comment if one exists; otherwise create it.
-          gh pr comment "$PR" --edit-last -F verdict.md \
-            || gh pr comment "$PR" -F verdict.md
+          verdict=$(jq -r '.verdict' verdict.json 2>/dev/null || echo error)
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+          {
+            echo 'summary<<SUMEOF'
+            if [ -f verdict.md ]; then cat verdict.md; else echo "_No verdict produced._"; fi
+            echo SUMEOF
+          } >> "$GITHUB_OUTPUT"
 
       - name: Enforce verdict
         run: |
@@ -148,3 +157,52 @@ jobs:
             exit 1
           fi
           echo "✅ Visual review passed."
+
+  post-comment:
+    name: Post quality-gates comment
+    needs: [ lint-bpmn, visual-review ]
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Build and post sticky comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINT_RESULT: ${{ needs.lint-bpmn.result }}
+          LINT_REPORT: ${{ needs.lint-bpmn.outputs.report }}
+          VIS_RESULT: ${{ needs.visual-review.result }}
+          VIS_SUMMARY: ${{ needs.visual-review.outputs.summary }}
+        run: |
+          {
+            echo "## BPMN quality gates"
+            echo
+
+            if [ "$LINT_RESULT" = "success" ]; then
+              echo "### Geometry (bpmnlint) — ✅ passed"
+            elif [ "$LINT_RESULT" = "failure" ]; then
+              echo "### Geometry (bpmnlint) — ❌ failed"
+              echo
+              echo '```'
+              printf '%s\n' "$LINT_REPORT"
+              echo '```'
+            else
+              echo "### Geometry (bpmnlint) — ⤼ $LINT_RESULT"
+            fi
+            echo
+
+            echo "### Visual review (AI judgment)"
+            echo
+            if [ "$VIS_RESULT" = "skipped" ]; then
+              echo "⤼ skipped — the geometry gate failed; fix that first."
+            elif [ -n "$VIS_SUMMARY" ]; then
+              printf '%s\n' "$VIS_SUMMARY"
+            else
+              echo "⚠️ no result produced."
+            fi
+          } > /tmp/comment.md
+
+          PR="${{ github.event.pull_request.number }}"
+          gh pr comment "$PR" --edit-last -F /tmp/comment.md \
+            || gh pr comment "$PR" -F /tmp/comment.md
