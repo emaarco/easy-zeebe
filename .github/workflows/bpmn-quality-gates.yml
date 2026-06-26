@@ -95,8 +95,19 @@ jobs:
             flow crossing or routed through a shape. Cosmetic spacing, routing length,
             and naming nits are medium/low and must not fail the verdict.
 
-            verdict.md — a short human-readable markdown summary (the verdict plus a
-            findings table) suitable to post verbatim as a PR comment.
+            verdict.md — use EXACTLY this template every time, so the posted comment
+            always looks the same. Fill in the values; add no extra sections or prose:
+
+              ## BPMN Visual Review
+
+              **Verdict:** <✅ PASS | ❌ FAIL>
+
+              | Severity | Model | Element | Issue | Rule |
+              | --- | --- | --- | --- | --- |
+              | <one row per finding, ordered high → low> |
+
+              If there are no findings, use a single row:
+              | – | – | – | No issues found. | – |
           PROMPT
           claude -p "$(cat /tmp/review-prompt.md)" \
             --allowedTools "Bash Read Glob Write Skill" \
