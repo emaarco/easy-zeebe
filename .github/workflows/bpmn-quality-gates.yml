@@ -3,26 +3,21 @@ name: BPMN quality gates
 on:
   pull_request:
     branches: [ main ]
-    # Both gates only run when a BPMN model actually changed in the PR.
     paths:
       - 'services/**/src/main/resources/bpmn/*.bpmn'
 
 jobs:
-  # Gate 1 — deterministic geometry checks (bpmnlint). Hard gate: any error fails.
   lint-bpmn:
     name: Lint BPMN models (geometry)
     runs-on: ubuntu-24.04
 
     steps:
-      # Step 1: Checkout code
       - name: Checkout Code
         uses: actions/checkout@v6
 
-      # Step 2: Fail the build if any npm dependency is not pinned to an exact version
       - name: Verify Pinned Dependencies
         uses: miragon/pin-npm-dependencies@v1
 
-      # Step 3: Set up Node.js (npm tooling lives in tools/)
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
@@ -30,12 +25,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: tools/package-lock.json
 
-      # Step 4: Install dependencies (bpmnlint)
       - name: Install Dependencies
         working-directory: tools
         run: npm ci
 
-      # Step 5: Lint BPMN models (fails the build on any error)
       - name: Lint BPMN models
         working-directory: tools
         run: |
@@ -44,8 +37,6 @@ jobs:
           echo "Total: $(find ../services -path '*/src/main/resources/bpmn/*.bpmn' | wc -l | tr -d ' ') model(s)"
           npm run lint:bpmn
 
-  # Gate 2 — AI visual judgment (verify-model-visually skill). Soft gate: fails only on
-  # high-severity findings; medium/low are reported as warnings + a PR comment.
   visual-review:
     name: Visual review (AI judgment)
     needs: lint-bpmn
@@ -70,10 +61,6 @@ jobs:
         working-directory: tools
         run: npm ci
 
-      # Render + judge via the Claude Code CLI. Unlike the GitHub Action, the CLI has
-      # no workflow-validation guard — so the gate runs even on the PR that changes
-      # this workflow, and the prompt can be iterated in-PR. Same OAuth secret as the
-      # action used. Uses the runner's preinstalled Chrome (no Chromium download).
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
 
@@ -137,8 +124,6 @@ jobs:
             --allowedTools "Bash Read Glob Write" \
             --dangerously-skip-permissions
 
-      # Deterministic enforcement + PR comment: the pipeline decision and the posting
-      # stay with us, not the model. Fails closed if no verdict.json was produced.
       - name: Enforce verdict
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
