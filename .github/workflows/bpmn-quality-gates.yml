@@ -96,7 +96,10 @@ jobs:
             and naming nits are medium/low and must not fail the verdict.
 
             verdict.md — use EXACTLY this template every time, so the posted comment
-            always looks the same. Fill in the values; add no extra sections or prose:
+            always looks the same. Fill in the values; add no extra sections or prose.
+            In the Model column put ONLY a markdown link whose text is the bare file
+            name and whose target is the repo-relative path — not the full path as
+            text — e.g. [membership.bpmn](services/example-service/src/main/resources/bpmn/membership.bpmn).
 
               ## BPMN Visual Review
 
@@ -104,7 +107,7 @@ jobs:
 
               | Severity | Model | Element | Issue | Rule |
               | --- | --- | --- | --- | --- |
-              | <one row per finding, ordered high → low> |
+              | <one row per finding, ordered high → low; Model = [name](path)> |
 
               If there are no findings, use a single row:
               | – | – | – | No issues found. | – |
