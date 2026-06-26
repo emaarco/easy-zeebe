@@ -156,7 +156,7 @@
       <bpmndi:BPMNShape id="Event_start_di" bpmnElement="startEvent_MembershipRequested">
         <dc:Bounds x="172" y="312" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="420" y="276" width="65" height="27" />
+          <dc:Bounds x="158" y="355" width="65" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_claim_di" bpmnElement="serviceTask_ClaimMembership">
@@ -181,7 +181,7 @@
         <dc:Bounds x="670" y="293" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_userTask_di" bpmnElement="userTask_ConfirmMembership">
-        <dc:Bounds x="720" y="293" width="100" height="80" />
+        <dc:Bounds x="810" y="293" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_subEnd_di" bpmnElement="endEvent_MembershipConfirmed">
         <dc:Bounds x="972" y="315" width="36" height="36" />
