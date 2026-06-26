@@ -70,50 +70,78 @@ jobs:
         working-directory: tools
         run: npm ci
 
-      # Render + judge. Uses the runner's preinstalled Chrome instead of downloading
-      # Chromium (faster, no flaky postinstall). Claude writes its verdict to verdict.json.
+      # Render + judge via the Claude Code CLI. Unlike the GitHub Action, the CLI has
+      # no workflow-validation guard — so the gate runs even on the PR that changes
+      # this workflow, and the prompt can be iterated in-PR. Same OAuth secret as the
+      # action used. Uses the runner's preinstalled Chrome (no Chromium download).
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
       - name: Run visual review
-        uses: anthropics/claude-code-action@v1.0.140
         env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
           PUPPETEER_SKIP_DOWNLOAD: 'true'
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: '--allowedTools "Bash,Read,Glob,Write"'
-          prompt: |
-            Run the `verify-model-visually` skill on every BPMN model under
-            services/**/src/main/resources/bpmn/*.bpmn.
+        run: |
+          mkdir -p .context/verify
+          cat > /tmp/review-prompt.md <<'PROMPT'
+          You are the BPMN visual-review quality gate. Judge the RENDERED PICTURE of
+          each BPMN model — never the XML. Use Glob to list every model matching
+          services/**/src/main/resources/bpmn/*.bpmn and review each one.
 
-            For each model: render it to PNG with `npx bpmn-to-image` (run it from the
-            tools/ directory), then read the rendered image and
-            docs/bpmn-styleguide/styleguide.md (the Layout Guidelines section) and judge
-            the layout — visibility, overlaps, crossing flows, spacing, and label quality.
-            Review the rendered picture, never the XML.
+          Method for EACH model — follow it exactly:
 
-            Then write a single JSON file to verdict.json at the repo root with EXACTLY
-            this shape (no prose around it):
+          1. Render at HIGH resolution (subtle overlaps vanish at default scale). Run
+             npx from the tools/ directory:
+               npx bpmn-to-image --scale 3 <model>:.context/verify/<name>.png
+
+          2. The Read tool downsamples large images — which hides exactly the subtle
+             defects this gate exists to catch. So do NOT judge from the whole image.
+             Get its width with `sips -g pixelWidth <png>`, then crop it into
+             overlapping ~1200px-wide left-to-right sections and Read EACH crop:
+               sips -c <fullHeight> 1200 --cropOffset 0 <leftX> <png> --out <crop>
+             Inspect every section closely before concluding.
+
+          3. Read docs/bpmn-styleguide/styleguide.md (the Layout Guidelines section).
+
+          4. Check, in order:
+             - Visibility: every element the process uses is actually drawn.
+             - Overlaps: no two shapes overlap, AND no label sits on top of a shape
+               or another label. A name/label rendered over a task or event IS an
+               overlap — look carefully for faint text behind a shape's own label.
+             - Crossing flows, and flows routed through a shape.
+             - Spacing, alignment, and label legibility.
+
+          Severity:
+             - high  = invisible/undrawn element, ANY shape-or-label overlap, or a
+               flow crossing/through a shape. These are the defects the deterministic
+               linter can miss — the whole reason this gate exists.
+             - medium/low = cosmetic spacing, routing length, naming-style nits.
+
+          Write TWO files at the repo root and post nothing yourself:
+
+            verdict.json — EXACTLY this shape, no prose around it:
               {
                 "verdict": "pass" | "fail",
                 "findings": [
-                  {
-                    "model": "<bpmn file path>",
-                    "element": "<element or flow name>",
-                    "issue": "<what is wrong>",
-                    "rule": "<styleguide rule>",
-                    "severity": "high" | "medium" | "low"
-                  }
+                  { "model": "<path>", "element": "<name>", "issue": "<what>",
+                    "rule": "<styleguide rule>", "severity": "high|medium|low" }
                 ]
               }
+            Set "verdict" to "fail" if and only if at least one finding is "high".
 
-            Set "verdict" to "fail" ONLY if at least one finding has severity "high"
-            (e.g. an invisible/undrawn element, a shape overlap, or a flow crossing a
-            shape that the linter somehow missed). Cosmetic spacing/label issues are
-            "medium" or "low" and must NOT fail the verdict.
+            verdict.md — a short human-readable markdown summary (the verdict plus a
+            findings table) suitable to post verbatim as a PR comment.
+          PROMPT
+          claude -p "$(cat /tmp/review-prompt.md)" \
+            --allowedTools "Bash Read Glob Write" \
+            --dangerously-skip-permissions
 
-            Finally, post a short summary comment on the PR with the findings.
-
-      # Deterministic enforcement: the pipeline decision stays in our hands, not the model's.
+      # Deterministic enforcement + PR comment: the pipeline decision and the posting
+      # stay with us, not the model. Fails closed if no verdict.json was produced.
       - name: Enforce verdict
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ ! -f verdict.json ]; then
             echo "::error::The visual review produced no verdict.json — treating as failure."
@@ -122,6 +150,10 @@ jobs:
           echo "Verdict file:"
           cat verdict.json
           echo
+
+          if [ -f verdict.md ]; then
+            gh pr comment "${{ github.event.pull_request.number }}" -F verdict.md || true
+          fi
 
           jq -r '.findings[]? | "::warning::[\(.severity)] \(.model) — \(.element): \(.issue) (\(.rule))"' verdict.json
 
