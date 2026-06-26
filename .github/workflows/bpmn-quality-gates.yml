@@ -204,5 +204,6 @@ jobs:
           } > /tmp/comment.md
 
           PR="${{ github.event.pull_request.number }}"
-          gh pr comment "$PR" --edit-last -F /tmp/comment.md \
-            || gh pr comment "$PR" -F /tmp/comment.md
+          REPO="${{ github.repository }}"
+          gh pr comment "$PR" -R "$REPO" --edit-last -F /tmp/comment.md \
+            || gh pr comment "$PR" -R "$REPO" -F /tmp/comment.md
