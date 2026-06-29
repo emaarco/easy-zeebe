@@ -4,6 +4,7 @@
   "private": true,
   "description": "Dev tooling for Easy Zeebe: deterministic BPMN linting (bpmnlint) and markdown formatting (prettier). Run from the repo root via `npm --prefix tools run <script>`.",
   "scripts": {
+    "hooks:install": "git -C .. config core.hooksPath .githooks",
     "lint:bpmn": "bpmnlint \"../services/**/src/main/resources/bpmn/*.bpmn\"",
     "lint:bpmn:probes": "bpmnlint \"../docs/bpmn-quality-gates/probes/**/*.bpmn\"",
     "fix:bpmn": "node bpmn-fix/fix.mjs",

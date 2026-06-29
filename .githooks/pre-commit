@@ -1,0 +1,17 @@
+#!/bin/sh
+# pre-commit — lint the repo's BPMN models with bpmnlint (geometry net).
+#
+# Layout bugs (invisible elements, overlaps, crossing flows, flows through a shape)
+# live in the DI layer and never show in a code diff. lint:bpmn globs every model
+# under services/**/src/main/resources/bpmn — a non-zero exit aborts the commit.
+#
+# One-time setup per clone/worktree: npm --prefix tools run hooks:install
+# Bypass intentionally: git commit --no-verify
+
+# Skip (don't block) if the toolchain isn't installed yet.
+[ -x tools/node_modules/.bin/bpmnlint ] || {
+  echo "pre-commit › bpmnlint not installed — run 'npm --prefix tools install' to enable; skipping."
+  exit 0
+}
+
+exec npm --prefix tools run --silent lint:bpmn
