@@ -1,42 +1,59 @@
 ---
 name: verify-model-visually
-description: Use while modeling a BPMN process to visually review a model you just edited. Renders the .bpmn to an image and checks the rendered picture (never the XML) against a visual styleguide — catching invisible elements, overlaps, crossing flows, and messy or hard-to-read layout. Use after editing a model, or when asked to review the diagram, check the layout, or verify the model looks right.
+description: Use while modeling a BPMN process to review a model you just edited. Runs both quality nets — the deterministic bpmnlint geometry linter and a visual review of the rendered image — and reports a combined verdict. Catches invisible elements, overlaps, crossing flows, flows routed through a shape (lint), plus messy or hard-to-read layout that needs judgment (image). Use after editing a model, or when asked to review the diagram, check the layout, or verify the model looks right.
 allowed-tools: Read, Bash, Glob
 ---
 
 # Skill: verify-model-visually
 
-Give the agent the visual feedback loop it lacks. BPMN bugs at the _visual_ layer
-(BPMNDI) are invisible in the XML: an element can execute but never render, or a shape
-can sit at guessed coordinates that overlap a neighbour or make a flow cross a label.
-The only reliable way to catch these is to **look at the rendered picture**.
+Give the agent the feedback loop it lacks. BPMN bugs at the _visual_ layer (BPMNDI) are
+invisible in the XML — a task can execute but never render; a shape can sit at guessed
+coordinates that overlap a neighbour or make a flow cross a label — and none of it shows up in a
+code diff. A model is guarded by **two complementary nets, and this skill runs both**:
 
-This skill is the **judgment** complement to the deterministic `bpmnlint` linter
-(`npm --prefix tools run lint:bpmn`). The linter now owns the geometric checks — invisible elements,
-overlapping shapes, crossing flows, and flows routed through a shape are all caught
-deterministically. Run the linter first; run this skill for what geometry can't decide:
-whether the layout communicates intent, semantic grouping, cramped-but-valid spacing, and
-label quality. (A geometric issue spotted here means the linter missed one — worth noting.)
+- **bpmnlint** (`npm --prefix tools run lint:bpmn`) — the **deterministic** net: invisible
+  elements, overlaps, crossing flows, flows routed through a shape. Fast, exact, no judgment.
+- **the rendered image** — the **judgment** net: intent, semantic grouping, cramped-but-valid
+  spacing, label quality — what no formula can settle.
+
+Run lint first, then look at the picture. (Lint also runs in the pre-commit hook and CI; running
+it here makes this a _complete_ review, not just the image half.) A geometric defect the image
+catches that lint missed is itself a finding — call it out.
 
 ## Key Rules
 
-- **Review the rendered image, not the XML.** Never reason about layout from `<dc:Bounds>`
-  or waypoints. Open the PNG and judge what a human sees.
+- **Run both nets and report both.** Lint for geometry, image for judgment. A green lint with
+  an ugly picture still fails the review; a clean picture with a red lint still fails.
+- **Review the rendered image, not the XML.** Never reason about layout from `<dc:Bounds>` or
+  waypoints. Open the PNG and judge what a human sees.
 - **Check the model against the styleguide's Layout Guidelines.** Load
-  `docs/bpmn-styleguide/styleguide.md` (the _Layout Guidelines_ section) each run; do not rely on
-  memory.
+  `docs/bpmn-styleguide/styleguide.md` (the _Layout Guidelines_ section) each run; do not rely
+  on memory.
 - **Report concrete, _located_ issues.** Name the element or flow and the rule it breaks
-  ("the `Send Welcome Mail` task overlaps the sub-process border" / "the `No` flow crosses
-  the `Send Confirmation Mail` task"). Never give a vague verdict like "looks a bit off".
-- **If everything passes, say so explicitly** and list what you checked.
+  ("the `Send Welcome Mail` task overlaps the sub-process border" / "the `No` flow crosses the
+  `Send Confirmation Mail` task"). Never give a vague verdict like "looks a bit off".
+- **If everything passes, say so explicitly** and list what each net checked.
 
 ## Instructions
 
-1. **Resolve the `.bpmn` file.** Use the path the user gave. If none, `Glob` for
-   `**/*.bpmn` (production models live under `services/**/src/main/resources/bpmn/`). If more
-   than one matches and the target is ambiguous, ask which file to review before continuing.
+1. **Resolve the `.bpmn` file.** Use the path the user gave. If none, `Glob` for `**/*.bpmn`
+   (production models live under `services/**/src/main/resources/bpmn/`). If more than one
+   matches and the target is ambiguous, ask which file to review before continuing.
 
-2. **Render the model to PNG** with bpmn-to-image
+2. **Run the deterministic linter first (geometry net).**
+
+   ```bash
+   npm --prefix tools run lint:bpmn
+   ```
+
+   It globs every production model (yours is in there). Clean = silent, exit 0; non-zero = real
+   geometry problems — **capture each finding** (every line names the element/flow + rule) for the
+   report, but don't stop; still do the visual pass. Missing binary → `npm --prefix tools install`
+   once, then re-run. **Skip this step only when geometry was already gated upstream this run**
+   (CI's dedicated lint job, or just after the pre-commit hook); then go straight to the visual
+   pass and note lint ran upstream.
+
+3. **Render the model to PNG** with bpmn-to-image
    ([bpmn-io/bpmn-to-image](https://github.com/bpmn-io/bpmn-to-image)) — the same tool the
    `bpmn-export` skill uses, so no new dependency. Write to a scratch path:
 
@@ -47,12 +64,12 @@ label quality. (A geometric issue spotted here means the linter missed one — w
    If the render command fails, stop and report the error (a model that will not render is
    itself a finding).
 
-3. **Load the inputs.** `Read` the rendered PNG (it loads as an image) and `Read`
+4. **Load the inputs.** `Read` the rendered PNG (it loads as an image) and `Read`
    `docs/bpmn-styleguide/styleguide.md` (the project BPMN styleguide — focus on its **Layout
    Guidelines** section; the rest covers naming, IDs, and automation).
 
-   If labels are too small to read — the Read tool downsamples large images, so this happens
-   on wider diagrams — re-render at a higher scale and read that instead:
+   If labels are too small to read — the Read tool downsamples large images, so this happens on
+   wider diagrams — re-render at a higher scale and read that instead:
 
    ```bash
    npx bpmn-to-image --scale 2 <path-to-bpmn>:.context/verify/<name>.png
@@ -66,37 +83,46 @@ label quality. (A geometric issue spotted here means the linter missed one — w
    sips -c <height> <cropW> --cropOffset <topY> <leftX> .context/verify/<name>.png --out .context/verify/<name>-1.png
    ```
 
-4. **Compare the diagram against the styleguide.** Work through, in order:
-   - **Visibility** — is every element that the process uses actually drawn? Watch for a flow
-     that ends in empty space, a node with no incoming/outgoing arrow, or an obvious gap where
-     a task should be — these signal an element that executes but has no shape. _Not_ a defect:
+5. **Review the image for the judgment residue.** Lint already owns the geometric checks, so
+   here you focus on what it can't decide — but use the picture to _confirm_ the geometry too
+   (a geometric defect visible here that lint did **not** flag is a finding). Work through, in
+   order:
+   - **Visibility** — is every element the process uses actually drawn? Watch for a flow that
+     ends in empty space, a node with no incoming/outgoing arrow, or an obvious gap where a task
+     should be — these signal an element that executes but has no shape. _Not_ a defect:
      compensation handlers (a task on a dotted association to a boundary compensation event) and
-     event sub-process starts sit off the main sequence-flow chain by design — never flag them as
-     orphaned.
+     event sub-process starts sit off the main sequence-flow chain by design — never flag them
+     as orphaned.
    - **No overlaps** — no two shapes (or a shape and a label) sit on top of each other.
-   - **No crossing flows** — sequence flows do not cross each other, and no flow runs through
-     a shape or over a label.
+   - **No crossing flows** — sequence flows do not cross each other, and no flow runs through a
+     shape or over a label.
    - **Spacing & alignment** — consistent gaps; elements on a shared lane line up; the flow
-     reads left-to-right.
+     reads left-to-right. _(judgment — lint can't settle this)_
    - **Readable labels** — every label is legible, near its element, and not clipped.
+     _(judgment)_
 
-5. **Report findings as a table** — one row per issue, each concretely **located** (name the
-   element or flow):
+6. **Report a combined verdict — both nets.** Lead with the overall result, then one section
+   per net:
 
-   | Element / flow           | What is wrong                                  | Styleguide rule   | Severity |
-   | ------------------------ | ---------------------------------------------- | ----------------- | -------- |
-   | `Send Welcome Mail` task | overlaps the sub-process border                | No overlaps       | high     |
-   | `No` flow                | runs through the `Send Confirmation Mail` task | No crossing flows | high     |
+   - **Geometry (bpmnlint):** ✅ clean, or a table of the lint findings (rule + element/flow).
+   - **Judgment (rendered image):** a table — one row per issue, each concretely **located**:
 
-   If the diagram passes, say so explicitly (a single `✅ no issues` row is fine) and name the
-   checks you ran. Note that this is an aesthetic review and recommend `npm --prefix tools run lint:bpmn` for
-   the structural pass.
+     | Element / flow           | What is wrong                                  | Styleguide rule   | Severity |
+     | ------------------------ | ---------------------------------------------- | ----------------- | -------- |
+     | `Send Welcome Mail` task | overlaps the sub-process border                | No overlaps       | high     |
+     | `No` flow                | runs through the `Send Confirmation Mail` task | No crossing flows | high     |
 
-   When you fix a layout issue, edit the DI coordinates in the `.bpmn` and shift whole groups
-   consistently — the shape _and_ its edge waypoints _and_ its label move together. After any DI
-   edit, re-render from step 2 to confirm, and run the process's integration test if there is one
-   (it deploys the BPMN and so also validates it parses).
+   If both nets are clean, say so explicitly (a single `✅ no issues` row per net is fine) and
+   name what each one checked.
 
-6. **Clean up.** Delete the rendered PNGs from `.context/verify/` once you are done inspecting them.
+7. **Fixing is a separate skill.** When there are findings, hand them to **`/fix-model-layout`**
+   — it resolves them DI-only (shape **and** its edge waypoints **and** its label move together)
+   so the executable process is provably unchanged. After any fix, **re-run both nets** (re-lint
+   _and_ re-render from step 2) until both are clean — a fix that adds a new finding is not a
+   fix — and run the process's integration test if there is one (it deploys the BPMN and so also
+   validates it parses).
+
+8. **Clean up.** Delete the rendered PNGs from `.context/verify/` once you are done inspecting
+   them.
 
 If anything is unclear (which file, what "done" looks like), ask before proceeding.

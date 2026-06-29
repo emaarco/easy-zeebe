@@ -55,7 +55,25 @@ Total: 1 model(s)
 
 The visual review (`/verify-model-visually`) is **not** in CI — it needs a multimodal model and
 human-style judgment, so it stays a local, agent-driven gate. CI owns only what a coordinate
-formula can settle.
+formula can settle. (The visual review _runs_ the linter too, so locally it covers both nets;
+CI splits them into separate jobs.)
+
+## Locally (pre-commit hook)
+
+CI is the backstop, but the cheapest place to catch a geometry bug is _before it is committed_.
+A pre-commit hook ([`.githooks/pre-commit`](../../.githooks/pre-commit)) runs `lint:bpmn` on
+commit and blocks on a non-zero exit — so the deterministic net is actually exercised on every
+machine, not just relied upon to be remembered. It lints every model the glob finds (the same
+set as CI), rather than trying to detect which ones changed. Install it once per clone/worktree
+(it points `core.hooksPath` at `.githooks`):
+
+```bash
+npm --prefix tools run hooks:install
+```
+
+The hook skips cleanly if the toolchain isn't installed yet, and can be bypassed deliberately
+with `git commit --no-verify`. The agent-driven `/verify-model-visually` skill runs the same
+linter as its first step, so an agent review covers the geometry net as well.
 
 ## The probes
 

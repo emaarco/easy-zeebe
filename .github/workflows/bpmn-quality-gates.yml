@@ -92,6 +92,11 @@ jobs:
           rendered picture, and check it against the styleguide. Apply it to each
           model. Do not reimplement the method here; rely on the skill.
 
+          Geometry is already enforced by the upstream `lint-bpmn` job that gates this
+          one, so do NOT run bpmnlint again — skip the skill's lint step and run only
+          its visual judgment pass. (The skill documents this opt-out.) This avoids
+          double-checking the geometry net.
+
           Then, based on the skill's findings, write TWO files at the repo root and
           post nothing yourself:
 

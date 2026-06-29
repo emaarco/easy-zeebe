@@ -120,8 +120,12 @@ or crossing shapes). Two gates guard against this:
   (run-once setup: `npm --prefix tools install`). bpmnlint plus two custom rules in
   `tools/bpmnlint-plugin-local/` catch invisible elements, overlaps, crossing flows, and
   flows routed through a shape; config in `tools/.bpmnlintrc`. Treat a non-zero exit as a blocker.
-- **`/verify-model-visually` owns judgment.** Renders the model and reviews the picture for what
-  geometry can't decide (grouping, intent, spacing, labels). Run it after non-trivial layout changes.
+  A **pre-commit hook** (`.githooks/pre-commit`) enforces this by linting every repo model on
+  commit; install it once per clone/worktree with `npm --prefix tools run hooks:install`. The
+  same lint runs in CI on every PR.
+- **`/verify-model-visually` runs both nets.** It runs the linter (geometry) **and** reviews the
+  rendered picture for what geometry can't decide (grouping, intent, spacing, labels), then
+  reports a combined verdict. Run it after non-trivial layout changes.
 - **`/fix-model-layout` fixes what they flag** (DI-only, so semantics stay safe), escalating:
   (1) `npm --prefix tools run fix:bpmn -- <file>` re-routes affected edges; (2) hand-edit DI
   coordinates; (3) `npm --prefix tools run auto-layout:bpmn -- <file>` regenerates the whole layout.
