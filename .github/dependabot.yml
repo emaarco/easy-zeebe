@@ -1,62 +1,75 @@
 version: 2
-updates:
 
-  # Config for backend-dependencies
-  - package-ecosystem: "gradle"
-    directory: "/"
+multi-ecosystem-groups:
+  backend:
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 7
-      semver-major-days: 30
-      semver-minor-days: 14
-      semver-patch-days: 7
-    groups:
-      backend-dependencies:
-        patterns:
-          - "*"
-        update-types:
-          - "patch"
-          - "minor"
-          - "major"
-
-  # Config for Docker Compose dependencies
-  - package-ecosystem: "docker-compose"
-    directories:
-      - "/stack"
-    schedule:
-      interval: "monthly"
-    cooldown:
-      default-days: 7
     labels:
       - "dependencies"
-    assignees:
-      - "emaarco"
+
+updates:
+
+  # Config for backend-dependencies (gradle + docker-compose in one PR)
+  - package-ecosystem: "gradle"
+    directory: "/"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "backend"
+
+  - package-ecosystem: "docker-compose"
+    directory: "/stack"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "backend"
+
+  # Config for dev-tooling dependencies
+  - package-ecosystem: "npm"
+    directory: "/tools"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    cooldown:
+      default-days: 7
     groups:
-      docker-compose:
+      tooling-dependencies:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
           - "patch"
           - "minor"
           - "major"
+      tooling-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   # Config for GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 7
     labels:
       - "dependencies"
-    assignees:
-      - "emaarco"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    cooldown:
+      default-days: 7
     groups:
       github-actions:
+        applies-to: version-updates
         patterns:
           - "*"
         update-types:
           - "patch"
           - "minor"
           - "major"
+      github-actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
