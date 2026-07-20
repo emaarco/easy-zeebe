@@ -16,3 +16,11 @@ icon = "flame"
 [scripts.run.test]
 command = "./gradlew test"
 icon = "test-tube"
+
+# End-to-end smoke test against a running backend: fires the Bruno happy-path
+# requests (register -> process-instances -> confirm) in sequence with a 3s delay
+# between each, giving the async process time to advance. Excludes the reject path.
+# Requires the `backend` target to be running first.
+[scripts.run.smoke]
+command = "cd bruno && npx --yes @usebruno/cli run --delay 3000 --exclude-tags reject --bail"
+icon = "activity"
