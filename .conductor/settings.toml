@@ -1,0 +1,22 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+[scripts]
+setup = "npm --prefix tools install && npm --prefix tools run hooks:install"
+run_mode = "nonconcurrent"
+archive = "cd stack && docker compose down"
+
+[scripts.run.infra]
+command = "cd stack && docker compose up"
+icon = "database"
+
+[scripts.run.backend]
+command = "cd stack && docker compose up -d --wait && cd .. && ./gradlew :services:example-service:bootRun"
+icon = "flame"
+
+[scripts.run.test]
+command = "./gradlew test"
+icon = "test-tube"
+
+[scripts.run.smoke]
+command = "cd bruno && npx --yes @usebruno/cli run --delay 3000 --exclude-tags reject --bail"
+icon = "activity"
