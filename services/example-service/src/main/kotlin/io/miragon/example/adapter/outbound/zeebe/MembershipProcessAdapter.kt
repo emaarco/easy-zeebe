@@ -40,7 +40,7 @@ class MembershipProcessAdapter(
                 filter.state(UserTaskState.CREATED)
                 filter.elementId(MiraveloMembershipProcessApi.Elements.USER_TASK_CONFIRM_MEMBERSHIP.value)
                 filter.processInstanceVariables(
-                    mapOf(MiraveloMembershipProcessApi.Variables.StartEventMembershipRequested.MEMBERSHIP_ID.value to id.value.toString())
+                    mapOf(MiraveloMembershipProcessApi.Variables.StartEventMembershipRequested.MEMBERSHIP_ID.value to "\"${id.value}\"")
                 )
             }
             .send()

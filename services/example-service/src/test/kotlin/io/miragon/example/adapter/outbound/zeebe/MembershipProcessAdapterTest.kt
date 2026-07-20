@@ -88,7 +88,7 @@ class MembershipProcessAdapterTest {
         verify { capturedFilter.elementId(MiraveloMembershipProcessApi.Elements.USER_TASK_CONFIRM_MEMBERSHIP.value) }
         verify {
             capturedFilter.processInstanceVariables(
-                mapOf(MiraveloMembershipProcessApi.Variables.StartEventMembershipRequested.MEMBERSHIP_ID.value to membershipId.value.toString())
+                mapOf(MiraveloMembershipProcessApi.Variables.StartEventMembershipRequested.MEMBERSHIP_ID.value to "\"${membershipId.value}\"")
             )
         }
         verify { camundaClient.newCompleteUserTaskCommand(expectedUserTaskKey) }
