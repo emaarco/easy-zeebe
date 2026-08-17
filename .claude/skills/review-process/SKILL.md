@@ -39,7 +39,7 @@ If you found a matching file, read the file and extract:
 
 Read `docs/bpmn-styleguide/styleguide.md`. Extract the conventions for:
 
-- **Element ID format**: `Type_Name` in CamelCase (e.g. `serviceTask_SendWelcomeMail`)
+- **Element ID format**: `type_name` in lowerCamelCase (e.g. `serviceTask_sendWelcomeMail`)
 - **Message ID format**: `<serviceName>.<state>` — both parts CamelCase (e.g. `newsletter.subscriptionConfirmed`)
 - **Type ID format**: `<serviceName>.<elementIdWithoutTypePrefix>` — both parts CamelCase (e.g.
   `newsletter.sendWelcomeMail`)

@@ -6,6 +6,9 @@
     "no-implicit-split": "error",
     "no-overlapping-elements": "error",
     "local/no-crossing-flows": "error",
-    "local/flow-through-element": "error"
+    "local/flow-through-element": "error",
+    "local/element-id": "error",
+    "local/message-id": "error",
+    "local/task-type": "error"
   }
 }

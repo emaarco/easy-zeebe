@@ -22,8 +22,8 @@ $ npx bpmnlint probe-messy.bpmn
 With `local/flow-through-element` (error) in place, both penetrated elements are reported:
 
 ```
-  Flow_no_spots  error  Sequence flow is routed through element <serviceTask_SendConfirmationMail>  local/flow-through-element
-  Flow_no_spots  error  Sequence flow is routed through element <endEvent_MembershipRejected>       local/flow-through-element
+  flow_noSpots  error  Sequence flow is routed through element <serviceTask_sendConfirmationMail>  local/flow-through-element
+  flow_noSpots  error  Sequence flow is routed through element <endEvent_membershipRejected>       local/flow-through-element
 ✖ 2 problems (2 errors, 0 warnings)                # exit 1
 ```
 
