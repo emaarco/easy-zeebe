@@ -2,6 +2,6 @@
   "name": "bpmnlint-plugin-local",
   "version": "1.0.0",
   "private": true,
-  "description": "In-repo bpmnlint rules for deterministic BPMN layout checks (crossing flows, flows routed through shapes).",
+  "description": "In-repo bpmnlint rules: deterministic BPMN layout checks (crossing flows, flows routed through shapes) plus styleguide ID/name conventions (element ids, message names, Zeebe task types).",
   "main": "index.js"
 }

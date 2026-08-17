@@ -14,7 +14,7 @@ error) flags any semantic element with no shape, so even before the custom layou
 caught:
 
 ```
-  serviceTask_SendConfirmationMail  error  Element is missing bpmndi  no-bpmndi
+  serviceTask_sendConfirmationMail  error  Element is missing bpmndi  no-bpmndi
 ✖ 1 problem (1 error, 0 warnings)                  # exit 1
 ```
 
@@ -24,7 +24,7 @@ Unchanged — the custom layout rules don't touch this case (it is a missing _sh
 edge geometry):
 
 ```
-  serviceTask_SendConfirmationMail  error  Element is missing bpmndi  no-bpmndi
+  serviceTask_sendConfirmationMail  error  Element is missing bpmndi  no-bpmndi
 ✖ 1 problem (1 error, 0 warnings)                  # exit 1
 ```
 

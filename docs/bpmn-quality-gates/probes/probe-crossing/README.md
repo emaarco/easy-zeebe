@@ -20,7 +20,7 @@ $ npx bpmnlint probe-crossing.bpmn
 With `local/no-crossing-flows` (error) in place:
 
 ```
-  Flow_welcome_to_activated  error  Sequence flow crosses sequence flow <Flow_reSend_to_end>  local/no-crossing-flows
+  flow_welcomeToActivated  error  Sequence flow crosses sequence flow <flow_reSendToEnd>  local/no-crossing-flows
 ✖ 1 problem (1 error, 0 warnings)                  # exit 1
 ```
 

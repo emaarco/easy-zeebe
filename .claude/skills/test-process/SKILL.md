@@ -51,7 +51,7 @@ class NewsletterProcessTest {
         val instanceKey = processPort.startNewsletterSubscription(NewsletterSubscriptionId("uuid-1"))
         val selector = ProcessInstanceSelectors.byKey(instanceKey)
 
-        CamundaAssert.assertThat(selector).hasCompletedElement("serviceTask_Subscribe")
+        CamundaAssert.assertThat(selector).hasCompletedElement("serviceTask_subscribe")
         verify { subscribeUseCase.execute(any()) }
         confirmVerified(subscribeUseCase)
     }

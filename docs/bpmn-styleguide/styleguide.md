@@ -113,21 +113,45 @@ Clear conventions for IDs, message names, and type IDs help maintain an overview
 ### Element IDs
 
 Unique, readable IDs make BPMN diagrams easier to maintain and analyse.
-Every element relevant to automation should have an ID following the format `Type_Name`,
-where both `Type` and `Name` are written in CamelCase.
+Every element relevant to automation should have an ID following the format `type_name`, where both
+`type` and `name` are written in **lowerCamelCase** — so the whole ID reads as one camelCase token with
+an underscore separating the type from the name (e.g. `serviceTask_sendWelcomeMail`, `flow_noSpots`).
 
-The table below is illustrative — it shows the pattern for common element types, not an exhaustive list.
-Apply the same `Type_Name` structure to any element not listed here.
+The table below covers every **executable** element type — all event, task and gateway kinds,
+sub-processes, call activities and sequence flows — and the linter (`local/element-id`) enforces it.
+Non-executable elements Zeebe ignores (text annotations, groups, associations, data objects/stores,
+pools/lanes) are not checked; their ids are auto-generated and carry no automation meaning. Apply the
+same `type_name` structure to any element not listed here.
 
-| Element              | ID Convention             | Example                          |
-| -------------------- | ------------------------- | -------------------------------- |
-| Start Event          | `startEvent_State`        | `startEvent_SubscriptionStarted` |
-| Intermediate Event   | `event_State`             | `event_ConfirmationReceived`     |
-| End Event            | `endEvent_State`          | `endEvent_SubscriptionCompleted` |
-| Service Task         | `serviceTask_Description` | `serviceTask_SendWelcomeMail`    |
-| User Task            | `userTask_Description`    | `userTask_ReviewSubscription`    |
-| Message Receive Task | `receiveTask_Description` | `receiveTask_AwaitConfirmation`  |
-| Gateway              | `gateway_Description`     | `gateway_IsCustomerKnown`        |
+| Element                          | ID Convention                                            | Example                          |
+| -------------------------------- | -------------------------------------------------------- | -------------------------------- |
+| Start Event                      | `startEvent_state`                                       | `startEvent_subscriptionStarted` |
+| Intermediate Event (catch/throw) | `event_state`                                            | `event_confirmationReceived`     |
+| End Event                        | `endEvent_state`                                         | `endEvent_subscriptionCompleted` |
+| Boundary Event                   | `boundary_state` or `event_state`                        | `boundary_reminderDue`           |
+| Task (undefined type)            | `task_description`                                       | `task_archiveRecord`             |
+| Service Task                     | `serviceTask_description`                                | `serviceTask_sendWelcomeMail`    |
+| User Task                        | `userTask_description`                                   | `userTask_reviewSubscription`    |
+| Send Task                        | `sendTask_description`                                   | `sendTask_notifyCustomer`        |
+| Message Receive Task             | `receiveTask_description`                                | `receiveTask_awaitConfirmation`  |
+| Manual Task                      | `manualTask_description`                                 | `manualTask_fileDocument`        |
+| Script Task                      | `scriptTask_description`                                 | `scriptTask_calculateScore`      |
+| Business Rule Task               | `businessRuleTask_description`                           | `businessRuleTask_checkCredit`   |
+| Gateway (all kinds)              | `gateway_description`                                    | `gateway_isCustomerKnown`        |
+| Sub-Process                      | `subProcess_description`                                 | `subProcess_confirmMembership`   |
+| Transaction                      | `transaction_description` or `subProcess_description`    | `transaction_reserveSeats`       |
+| Ad-Hoc Sub-Process               | `adHocSubProcess_description` or `subProcess_description`| `adHocSubProcess_triageTickets`  |
+| Call Activity                    | `callActivity_description`                               | `callActivity_shipOrder`         |
+| Sequence Flow                    | `flow_description`                                       | `flow_claimToGateway`            |
+
+Where two forms are shown, both are accepted — a sensible specific prefix (`boundary_`,
+`transaction_`, `adHocSubProcess_`) **or** the normal generic one (`event_`, `subProcess_`). All
+gateway kinds share the flat `gateway_` prefix.
+
+Events may additionally qualify the prefix with their event definition — `messageStartEvent_state`,
+`timerStartEvent_state`, `messageBoundary_state`, and so on. This qualifier is optional, but if present
+it must be truthful: a `timerStartEvent_` prefix on a message start event is wrong, because an ID that
+lies about the model is worse than one that stays silent about it.
 
 ### Message IDs
 
@@ -149,7 +173,7 @@ subscribes to. To ensure uniqueness across services, use the following schema �
 <serviceName>.<elementIdWithoutTypePrefix>
 ```
 
-> Example: if the service task ID is `serviceTask_SendWelcomeMail` in the `miravelo` service, the
+> Example: if the service task ID is `serviceTask_sendWelcomeMail` in the `miravelo` service, the
 > type ID is `miravelo.sendWelcomeMail`.
 
 ---

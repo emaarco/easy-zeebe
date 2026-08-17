@@ -1,7 +1,14 @@
 # bpmnlint-plugin-local
 
-In-repo [bpmnlint](https://github.com/bpmn-io/bpmnlint) plugin with deterministic **BPMN
-layout** rules. Part of the project's BPMN quality gates — see
+In-repo [bpmnlint](https://github.com/bpmn-io/bpmnlint) plugin with two rule families:
+
+- **Layout** — deterministic geometry rules computed over the diagram interchange (DI), closing
+  a blind spot in bpmnlint core (see below).
+- **Styleguide** — the ID and name conventions from
+  [`docs/bpmn-styleguide/styleguide.md`](../../docs/bpmn-styleguide/styleguide.md), so a
+  mismatched element id or Zeebe task type is caught before it reaches `bpmn-to-code` or the engine.
+
+Part of the project's BPMN quality gates — see
 [`docs/bpmn-quality-gates/`](../../docs/bpmn-quality-gates/) for the full story and the probes.
 
 ## Why this exists
@@ -27,10 +34,20 @@ missing geometric rules ourselves. They compute purely over the DI (shape `dc:Bo
 
 ## The rules
 
+### Layout (geometry over the DI)
+
 | Rule                         | Default | Detects                                                                                                    |
 | ---------------------------- | ------- | ---------------------------------------------------------------------------------------------------------- |
 | `local/flow-through-element` | error   | a sequence flow whose drawn path enters the interior of a shape it does not connect to                     |
 | `local/no-crossing-flows`    | error   | two sequence flows whose drawn paths cross (flows that share a node are expected to meet and are excluded) |
+
+### Styleguide (ID & name conventions)
+
+| Rule                | Default | Detects                                                                                                                            |
+| ------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `local/element-id`  | error   | an element id that does not read `<type>_<CamelCaseName>` across the executable set — every event, task and gateway kind, sub-processes, call activities, transactions, ad-hoc sub-processes and sequence flows. A type may accept a sensible specific prefix **or** the generic one (boundary event: `boundary_` or `event_`; transaction/ad-hoc: their prefix or `subProcess_`). Events may further qualify with their event definition (`messageStartEvent_`, `messageBoundary_`, …); a qualifier that is **present but false** — e.g. `timerStartEvent_` on a message start event — is reported as a contradiction. Non-executable elements (text annotations, groups, associations, data objects/stores, pools/lanes) are not checked. |
+| `local/message-id`  | error   | a `bpmn:Message` **name** (the correlation key, not the `Message_<hash>` id) that does not read `<serviceName>.<state>`, both camelCase |
+| `local/task-type`   | error   | a service task's Zeebe **task type** (`zeebe:taskDefinition type=…`) that does not read `<serviceName>.<elementIdWithoutTypePrefix>`, both camelCase |
 
 ## How it is wired (no npm publish)
 
@@ -44,7 +61,10 @@ This package is **not** published. It is consumed locally:
    ```json
    "rules": {
      "local/no-crossing-flows": "error",
-     "local/flow-through-element": "error"
+     "local/flow-through-element": "error",
+     "local/element-id": "error",
+     "local/message-id": "error",
+     "local/task-type": "error"
    }
    ```
 
@@ -78,6 +98,9 @@ message-flow/association routing, and cross-pool crossings within a single colla
 ```
 index.js                      rule registry (maps local/<name> -> ./rules/<name>)
 rules/_geometry.js            shared DI extraction + segment/rect geometry
-rules/no-crossing-flows.js    local/no-crossing-flows
-rules/flow-through-element.js local/flow-through-element
+rules/no-crossing-flows.js    local/no-crossing-flows    (layout)
+rules/flow-through-element.js local/flow-through-element (layout)
+rules/element-id.js           local/element-id           (styleguide)
+rules/message-id.js           local/message-id           (styleguide)
+rules/task-type.js            local/task-type            (styleguide)
 ```
