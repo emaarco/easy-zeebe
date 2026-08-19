@@ -14,10 +14,6 @@ params:path {
   membershipId: {{membershipId}}
 }
 
-vars:pre-request {
-  membershipId: 7a926fdd-2453-4298-b178-cf2cd6cba592
-}
-
 assert {
   res.status: eq 200
 }
