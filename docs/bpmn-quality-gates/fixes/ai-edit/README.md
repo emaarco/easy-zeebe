@@ -1,4 +1,4 @@
-# Tier 2 — the AI edits the DI (a case Tier 1 can't fix)
+# The AI edits the DI
 
 Not every detected problem is an edge-routing problem. Here `Send Rejection Mail` was moved on
 top of the `Membership rejected` end event — an **overlap**.
@@ -15,16 +15,11 @@ endEvent_MembershipRejected    error  Element overlaps with other element  no-ov
 ✖ 2 problems (2 errors, 0 warnings)                  # exit 1
 ```
 
-The deterministic Tier-1 fixer **can't help** — it only re-routes edges:
+An overlap can't be resolved by re-routing edges — the **repair** is to move a shape, and its
+connected edges + label with it:
 
-```
-$ npm --prefix tools run fix:bpmn -- before.bpmn
-  0 flow(s) rerouted, 0 escalated
-```
-
-This is exactly why Tier 2 exists: the overlap is **deterministically detected**, but the
-**repair** (move a shape, and its connected edges + label with it) is not an edge-routing
-problem. The detection isn't the hard part — the fix is.
+This is exactly why the hand DI-edit exists: the overlap is **deterministically detected**, but
+the repair is not an edge-routing problem. The detection isn't the hard part — the fix is.
 
 ## After ([`after.bpmn`](./after.bpmn))
 
@@ -37,5 +32,6 @@ $ npx bpmnlint after.bpmn
                                                      # ✅ 0 problems — exit 0
 ```
 
-Still DI-only — the process is unchanged. (The same Tier-2 path handles a missing shape
-(`no-bpmndi`) or a layout that is _valid but reads badly_, which no rule flags at all.)
+Still DI-only — the process is unchanged. (The same hand-edit path handles a missing shape
+(`no-bpmndi`), a flow routed through a shape or a crossing flow, or a layout that is _valid but
+reads badly_, which no rule flags at all.)

@@ -1,4 +1,4 @@
-# Tier 3 — full auto-layout (the escape hatch)
+# Full auto-layout (the escape hatch)
 
 Throws the diagram interchange away and regenerates everything from the semantic model. Input:
 [`probe-messy`](../../probes/probe-messy/).
@@ -27,4 +27,5 @@ Association_ClaimCompensation  error  Element is missing bpmndi  no-bpmndi
 
 bpmn-auto-layout does not lay out **associations, groups, or message flows** (and lays out only
 the first pool of a collaboration, with sub-processes collapsed). Use it only for a model with
-no diagram interchange at all, or as a last resort — then fix the dropped bits in Tier 2.
+no diagram interchange at all, or as a last resort — then fix the dropped bits by hand-editing
+the DI.

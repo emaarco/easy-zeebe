@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-// Variant 3 — FULL auto-layout (the escape hatch).
+// FULL auto-layout — a direct wrapper around bpmn.io's bpmn-auto-layout.
 //
 // Throws away the diagram interchange and regenerates a complete left-to-right
-// layout from the semantic model with bpmn.io's bpmn-auto-layout. Unlike the
-// surgical fixer (fix.mjs), this does NOT preserve hand-tuned geometry — it is
-// for models with no/garbage DI, or as a last resort.
+// layout from the semantic model. This does NOT preserve hand-tuned geometry —
+// it is for models with no/garbage DI, or as a last resort.
 //
 // Known limits of bpmn-auto-layout: only the first participant of a
 // collaboration is laid out; sub-processes are rendered collapsed; groups, text

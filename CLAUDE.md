@@ -117,18 +117,21 @@ BPMN edits can break in ways the XML hides (elements that execute but never rend
 or crossing shapes). Two gates guard against this:
 
 - **Lint owns geometry.** After **every** BPMN edit run `npm --prefix tools run lint:bpmn`
-  (run-once setup: `npm --prefix tools install`). bpmnlint plus two custom rules in
-  `tools/bpmnlint-plugin-local/` catch invisible elements, overlaps, crossing flows, and
-  flows routed through a shape; config in `tools/.bpmnlintrc`. Treat a non-zero exit as a blocker.
-  A **pre-commit hook** (`.githooks/pre-commit`) enforces this by linting every repo model on
-  commit; install it once per clone/worktree with `npm --prefix tools run hooks:install`. The
-  same lint runs in CI on every PR.
+  (run-once setup: `npm --prefix tools install`). bpmnlint's recommended rules, the shared
+  [`@miragon/bpmnlint-plugin-rules`](https://github.com/Miragon/bpmnlint-rules) (crossing flows,
+  flows routed through a shape, element-id naming — at **warning**), the `camunda-compat` engine
+  rules, and two local styleguide rules in `tools/bpmnlint-plugin-local/` (`message-id`,
+  `task-type`) catch invisible elements, overlaps, geometry and naming problems; config in
+  `tools/.bpmnlintrc`. Treat a non-zero exit (an **error**-level finding) as a blocker; the Miragon
+  geometry/naming rules surface as advisory warnings. A **pre-commit hook**
+  (`.githooks/pre-commit`) enforces this by linting every repo model on commit; install it once per
+  clone/worktree with `npm --prefix tools run hooks:install`. The same lint runs in CI on every PR.
 - **`/verify-model-visually` runs both nets.** It runs the linter (geometry) **and** reviews the
   rendered picture for what geometry can't decide (grouping, intent, spacing, labels), then
   reports a combined verdict. Run it after non-trivial layout changes.
-- **`/fix-model-layout` fixes what they flag** (DI-only, so semantics stay safe), escalating:
-  (1) `npm --prefix tools run fix:bpmn -- <file>` re-routes affected edges; (2) hand-edit DI
-  coordinates; (3) `npm --prefix tools run auto-layout:bpmn -- <file>` regenerates the whole layout.
+- **`/fix-model-layout` fixes what they flag** (DI-only, so semantics stay safe): hand-edit DI
+  coordinates for a targeted fix, or `npm --prefix tools run auto-layout:bpmn -- <file>` to
+  regenerate the whole layout (destructive — discards hand-tuned positioning).
 
 Reproducible probes live in `docs/bpmn-quality-gates/` (see `docs/bpmn-quality-gates/README.md`).
 

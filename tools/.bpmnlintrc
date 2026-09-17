@@ -1,13 +1,14 @@
 {
-  "extends": "bpmnlint:recommended",
+  "extends": [
+    "bpmnlint:recommended",
+    "plugin:@miragon/rules/recommended-for-automation",
+    "plugin:camunda-compat/camunda-cloud-8-8"
+  ],
+  "moddleExtensions": {
+    "zeebe": "zeebe-bpmn-moddle/resources/zeebe.json"
+  },
   "rules": {
-    "label-required": "error",
-    "no-disconnected": "error",
-    "no-implicit-split": "error",
     "no-overlapping-elements": "error",
-    "local/no-crossing-flows": "error",
-    "local/flow-through-element": "error",
-    "local/element-id": "error",
     "local/message-id": "error",
     "local/task-type": "error"
   }
