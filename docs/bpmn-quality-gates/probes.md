@@ -10,12 +10,12 @@ intact.
 Each probe is a self-contained folder — its model, its rendered image, and a **README with the
 before/after lint output**:
 
-| Probe                                          | What was broken                                                                                                                                   | Caught by                                     |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| [`clean`](./probes/clean/)                     | nothing — control; an exact copy of the production membership model, which itself lints **0 problems**.                                           | — (passes both nets)                          |
-| [`probe-invisible`](./probes/probe-invisible/) | the `BPMNShape` for **Send Confirmation Mail** was deleted. The task still exists in the XML and still executes — it just never renders.          | bpmnlint `no-bpmndi` (error)                  |
-| [`probe-messy`](./probes/probe-messy/)         | the **No** flow was re-routed straight through the _Send Confirmation Mail_ task and the _Membership rejected_ end event. **No shape was moved.** | bpmnlint `local/flow-through-element` (error) |
-| [`probe-crossing`](./probes/probe-crossing/)   | the **Welcome → Activated** flow was re-routed to dip down and cross the independent **Re-Send → Mail sent again** flow.                          | bpmnlint `local/no-crossing-flows` (error)    |
+| Probe                                          | What was broken                                                                                                                                   | Caught by                                                |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| [`clean`](./probes/clean/)                     | nothing — control; an exact copy of the production membership model, which itself lints **0 problems**.                                           | — (passes both nets)                                     |
+| [`probe-invisible`](./probes/probe-invisible/) | the `BPMNShape` for **Send Confirmation Mail** was deleted. The task still exists in the XML and still executes — it just never renders.          | bpmnlint `no-bpmndi` (error)                             |
+| [`probe-messy`](./probes/probe-messy/)         | the **No** flow was re-routed straight through the _Send Confirmation Mail_ task and the _Membership rejected_ end event. **No shape was moved.** | bpmnlint `@miragon/rules/flow-through-element` (warning) |
+| [`probe-crossing`](./probes/probe-crossing/)   | the **Welcome → Activated** flow was re-routed to dip down and cross the independent **Re-Send → Mail sent again** flow.                          | bpmnlint `@miragon/rules/flow-crossing` (warning)        |
 
 ## Reproduce
 
@@ -33,48 +33,49 @@ npx bpmnlint docs/bpmn-quality-gates/probes/probe-messy/probe-messy.bpmn
 
 ## Results — the deterministic net
 
-bpmnlint now catches **all four** probes. Geometry is the linter's job; that is the whole
+bpmnlint now surfaces **all four** probes. Geometry is the linter's job; that is the whole
 design.
 
-| Probe             | bpmnlint result                                   |
-| ----------------- | ------------------------------------------------- |
-| `clean`           | ✅ 0 problems (exit 0)                            |
-| `probe-invisible` | ✅ `error no-bpmndi` (exit 1)                     |
-| `probe-messy`     | ✅ `error local/flow-through-element` ×2 (exit 1) |
-| `probe-crossing`  | ✅ `error local/no-crossing-flows` (exit 1)       |
+| Probe             | bpmnlint result                                     |
+| ----------------- | --------------------------------------------------- |
+| `clean`           | ✅ 0 problems (exit 0)                              |
+| `probe-invisible` | ✅ `error no-bpmndi` (exit 1)                       |
+| `probe-messy`     | ✅ `warning @miragon/rules/flow-through-element` ×2 |
+| `probe-crossing`  | ✅ `warning @miragon/rules/flow-crossing`           |
 
 Each probe's own README shows its full before/after output — see
 [`probe-messy`](./probes/probe-messy/) and [`probe-crossing`](./probes/probe-crossing/) (both
-passed silently before the custom rules → now `error`).
+passed silently before the rules → now reported as warnings).
 
-All four geometry findings are **errors** that fail the gate. We treat geometry uniformly — a
-crossing or a flow through a shape is a defect to fix, consistent with `no-overlapping-elements`
-(which we also bumped from bpmnlint's default `warn` to `error`). If a crossing is genuinely
-unavoidable in a dense diagram, suppress that one occurrence with a `bpmnlint-disable` directive
-rather than relaxing the rule globally.
+The two edge-geometry findings are **warnings** (advisory, non-blocking) under the
+`recommended-for-automation` preset — they surface a crossing or a flow through a shape for the
+author to fix, but do not fail the gate. Only `no-bpmndi`, `no-overlapping-elements` (which we
+also bumped from bpmnlint's default `warn` to `error`), the structural and engine-compat rules,
+and the styleguide rules `local/message-id` / `local/task-type` fail CI at **error**.
 
 > **History.** `probe-messy` used to be bpmnlint's documented blind spot — the linter's
 > shipped rules only compare shape-vs-shape bounds and never inspect edge geometry, so the
-> re-routed flow passed. The custom rule below closes that gap, which is why `probe-messy` now
-> fails the linter rather than only the visual review.
+> re-routed flow passed. The rule below closes that gap, which is why `probe-messy` now
+> surfaces in the linter rather than only the visual review.
 
-## Custom layout rules
+## Edge-geometry layout rules
 
 `bpmnlint:recommended` only touches the DI in two rules: `no-bpmndi` (a semantic element with
 no shape) and `no-overlapping-elements` (shape-vs-shape bounding-box overlap, which our
 `tools/.bpmnlintrc` bumps from `warn` to **`error`**). Neither looks at **edge waypoints**, so
-crossing flows and flows-through-shapes slipped through. Two small in-repo rules close that:
+crossing flows and flows-through-shapes slipped through. Two published rules from
+`@miragon/bpmnlint-plugin-rules` (referenced in config as `@miragon/rules`) close that:
 
-| Rule                         | Level | Detects                                                                                                    |
-| ---------------------------- | ----- | ---------------------------------------------------------------------------------------------------------- |
-| `local/flow-through-element` | error | a sequence flow whose drawn path enters the interior of a shape it does not connect to                     |
-| `local/no-crossing-flows`    | error | two sequence flows whose drawn paths cross (flows that share a node are expected to meet and are excluded) |
+| Rule                                  | Level   | Detects                                                                                                    |
+| ------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------- |
+| `@miragon/rules/flow-through-element` | warning | a sequence flow whose drawn path enters the interior of a shape it does not connect to                     |
+| `@miragon/rules/flow-crossing`        | warning | two sequence flows whose drawn paths cross (flows that share a node are expected to meet and are excluded) |
 
-They live in [`tools/bpmnlint-plugin-local/`](../../tools/bpmnlint-plugin-local) as an in-repo
-bpmnlint plugin — wired through `tools/package.json` as a `file:` devDependency and referenced from
-`tools/.bpmnlintrc`, so they run under the same `npm --prefix tools run lint:bpmn` gate with **no npm publishing**.
-Each is pure geometry over `dc:Bounds` + edge `waypoint`s, modelled on core's
-`no-overlapping-elements.js`. They are deliberately conservative — comparison is scoped per
+They ship in the published `@miragon/bpmnlint-plugin-rules` package — pulled in via
+`tools/package.json` and enabled through the `plugin:@miragon/rules/recommended-for-automation`
+preset in `tools/.bpmnlintrc`, so they run under the same `npm --prefix tools run lint:bpmn` gate.
+Under that preset they report as **non-blocking warnings**. Each is pure geometry over
+`dc:Bounds` + edge `waypoint`s. They are deliberately conservative — comparison is scoped per
 diagram plane (so collapsed-sub-process drill-downs never collide), expanded containers
 (sub-processes, pools, lanes, groups), boundary events, decorative artifacts (text annotations,
 data objects/stores), and a flow's own endpoints/hosts are excluded, and container membership

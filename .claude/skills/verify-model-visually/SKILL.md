@@ -12,7 +12,8 @@ coordinates that overlap a neighbour or make a flow cross a label — and none o
 code diff. A model is guarded by **two complementary nets, and this skill runs both**:
 
 - **bpmnlint** (`npm --prefix tools run lint:bpmn`) — the **deterministic** net: invisible
-  elements, overlaps, crossing flows, flows routed through a shape. Fast, exact, no judgment.
+  elements, overlaps (errors), crossing flows and flows routed through a shape (advisory
+  warnings). Fast, exact, no judgment.
 - **the rendered image** — the **judgment** net: intent, semantic grouping, cramped-but-valid
   spacing, label quality — what no formula can settle.
 
@@ -46,9 +47,11 @@ catches that lint missed is itself a finding — call it out.
    npm --prefix tools run lint:bpmn
    ```
 
-   It globs every production model (yours is in there). Clean = silent, exit 0; non-zero = real
-   geometry problems — **capture each finding** (every line names the element/flow + rule) for the
-   report, but don't stop; still do the visual pass. Missing binary → `npm --prefix tools install`
+   It globs every production model (yours is in there). Clean = silent, exit 0. Any printed line
+   is a finding — errors (invisible element, overlap) exit non-zero; the edge-geometry rules
+   (crossing flows, flow-through-shape) print as advisory warnings and still exit 0.
+   **Capture each finding** (every line names the element/flow + rule) for the report, but don't
+   stop; still do the visual pass. Missing binary → `npm --prefix tools install`
    once, then re-run. **Skip this step only when geometry was already gated upstream this run**
    (CI's dedicated lint job, or just after the pre-commit hook); then go straight to the visual
    pass and note lint ran upstream.

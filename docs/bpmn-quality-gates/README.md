@@ -23,8 +23,9 @@ If a coordinate formula can settle it, it belongs in the cheap deterministic lin
 depends on meaning or human perception, it needs the visual review. bpmnlint already ships
 overlap (`no-overlapping-elements`) and invisible-element (`no-bpmndi`) checks — but those only
 compare **shape bounds**, never **edge geometry**, so crossing flows and flows routed through a
-shape slip through. Two small in-repo custom rules — `local/no-crossing-flows` and
-`local/flow-through-element` — close that gap. (See
+shape slip through. Two published rules — `@miragon/rules/flow-crossing` and
+`@miragon/rules/flow-through-element` (from `@miragon/bpmnlint-plugin-rules`) — close that gap,
+though under the `recommended-for-automation` preset they run as **non-blocking warnings**. (See
 [`probes.md`](./probes.md#custom-layout-rules) and
 [`tools/bpmnlint-plugin-local/`](../../tools/bpmnlint-plugin-local).)
 
@@ -35,7 +36,11 @@ on the agent's machine. The [`lint-bpmn-models`](../../.github/workflows/lint-bp
 workflow fires on PRs targeting `main` and is the backstop for the one failure mode this whole
 folder is about: a layout bug invisible in the XML diff slips past human review precisely because
 a reviewer reads the diff, not the rendered picture. A red check is impossible to miss; a subtly
-broken diagram in a diff is easy to wave through. The job:
+broken diagram in a diff is easy to wave through. (Note: only `no-bpmndi`, `no-overlapping-elements`,
+the structural `bpmnlint:recommended` rules, the `camunda-compat` engine rules, and the styleguide
+rules `local/message-id` and `local/task-type` gate at **error**; the edge-geometry rules
+`@miragon/rules/flow-crossing` and `@miragon/rules/flow-through-element` run as advisory
+**warnings**.) The job:
 
 1. **Pins dependencies** (`miragon/pin-npm-dependencies`) — the lint result must be reproducible,
    so a floating transitive bump can't silently change what the rules catch. See the
@@ -85,13 +90,15 @@ rendered image, and a README showing the **before/after** lint output:
 - **[`probe-invisible`](./probes/probe-invisible/)** — a task's shape is deleted (it still
   executes, never renders) → bpmnlint `no-bpmndi`.
 - **[`probe-messy`](./probes/probe-messy/)** — a flow re-routed through two unrelated elements,
-  no shape moved → bpmnlint `local/flow-through-element`. _This used to be the linter's blind
-  spot; the custom rule closes it._
+  no shape moved → bpmnlint `@miragon/rules/flow-through-element` (warning). _This used to be the
+  linter's blind spot; the rule closes it._
 - **[`probe-crossing`](./probes/probe-crossing/)** — two independent flows routed to cross →
-  bpmnlint `local/no-crossing-flows`.
+  bpmnlint `@miragon/rules/flow-crossing` (warning).
 
-Every probe is now caught by the **deterministic** net. That is the point: geometry should be
-the linter's job. The visual review's remaining, irreducible value is the **subjective**
+Every probe is now surfaced by the **deterministic** net. That is the point: geometry should be
+the linter's job. Note the two edge-geometry rules report at **warning** level (advisory, not a
+hard gate); only `no-bpmndi` blocks among the probes. The visual review's remaining, irreducible
+value is the **subjective**
 residue no coordinate rule can settle — see [`probes.md`](./probes.md) for the full results,
 the custom rules, and exactly where that boundary falls.
 
@@ -100,15 +107,13 @@ the custom rules, and exactly where that boundary falls.
 > **⚠️ Reference implementation, not a drop-in library.** The fixers below are worked ideas, **not production-tested** tooling. This applies **especially to the automatic fixers** — they edit diagram geometry heuristically, so review every change they make and harden them before relying on them. Fork and adapt freely.
 
 Detection is only half the loop. The [`/fix-model-layout`](../../.claude/skills/fix-model-layout)
-skill resolves a flagged issue three ways, in escalating order — all touching only `bpmndi:`, so
+skill resolves a flagged issue two ways, in escalating order — all touching only `bpmndi:`, so
 the executable process is provably unchanged:
 
-1. **Deterministic reroute** — `npm --prefix tools run fix:bpmn -- <file> --write` re-routes only the affected
-   edges with bpmn.io's `ManhattanLayout` (layout-preserving).
-2. **AI edits the DI** — for what the tool escalates, or subjective issues, the agent edits the
-   coordinates guided by the rendered image.
-3. **Full auto-layout** — `npm --prefix tools run auto-layout:bpmn -- <file> --write` regenerates everything with
+1. **AI edits the DI** — the agent edits the coordinates guided by the rendered image (works for
+   edge routing, overlaps, and subjective issues alike).
+2. **Full auto-layout** — `npm --prefix tools run auto-layout:bpmn -- <file> --write` regenerates everything with
    `bpmn-auto-layout` (escape hatch; discards hand-tuned positioning).
 
-The tools live in [`tools/bpmn-fix/`](../../tools/bpmn-fix); worked **before/after** examples of
-each variant are in [`fixes/`](./fixes/).
+The auto-layout script lives at [`tools/auto-layout.mjs`](../../tools/auto-layout.mjs); worked
+**before/after** examples of each variant are in [`fixes/`](./fixes/).

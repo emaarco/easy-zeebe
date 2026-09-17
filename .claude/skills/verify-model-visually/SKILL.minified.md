@@ -9,7 +9,7 @@ Give the agent the feedback loop it lacks. BPMN bugs at the _visual_ layer (BPMN
 
 A BPMN model is guarded by **two complementary nets, and this skill runs both**:
 
-- **bpmnlint** (`npm --prefix tools run lint:bpmn`) — the **deterministic** net: invisible elements, overlapping shapes, crossing flows, flows routed through a shape. Fast, exact, no judgment. [...]
+- **bpmnlint** (`npm --prefix tools run lint:bpmn`) — the **deterministic** net: invisible elements, overlapping shapes (errors), crossing flows, flows routed through a shape (advisory warnings). Fast, exact, no judgment. [...]
 - **the rendered image** — the **judgment** net: intent, semantic grouping, cramped-but-valid spacing, label quality. [...]
 
 Run lint first, then look at the picture. The linter is also wired into the pre-commit hook (`npm --prefix tools run hooks:install`) and CI; running it here makes this a **complete** review, not just the image half. A geometric defect the image surfaces that lint missed is itself a finding. [...]
@@ -25,7 +25,7 @@ Run lint first, then look at the picture. The linter is also wired into the pre-
 ## Instructions
 
 1. **Resolve the `.bpmn`** — use the given path; else `Glob` `**/*.bpmn`; ask if ambiguous. [...]
-2. **Lint first (geometry net)** — `npm --prefix tools run lint:bpmn` (globs all production models). Clean = silent, exit 0; non-zero = capture each finding (element/flow + rule) but **don't stop** — still do the visual pass. Missing binary → `npm --prefix tools install` once. **Skip only when geometry was already gated upstream this run** (CI's dedicated lint job, or just after the pre-commit hook) — then go straight to the visual pass + note lint ran upstream. [...]
+2. **Lint first (geometry net)** — `npm --prefix tools run lint:bpmn` (globs all production models). Clean = silent, exit 0; any printed line is a finding (errors exit non-zero; edge-geometry crossing/flow-through-shape rules print as advisory warnings, exit 0) — capture each finding (element/flow + rule) but **don't stop** — still do the visual pass. Missing binary → `npm --prefix tools install` once. **Skip only when geometry was already gated upstream this run** (CI's dedicated lint job, or just after the pre-commit hook) — then go straight to the visual pass + note lint ran upstream. [...]
 3. **Render to PNG** — `npx bpmn-to-image <bpmn>:.context/verify/<name>.png` (reuses `bpmn-export`). On failure, stop and report. [...]
 4. **Load inputs** — `Read` the PNG (loads as image) + `docs/bpmn-styleguide/styleguide.md` (Layout Guidelines). Tiny labels → re-render `--scale 2`, else crop with `sips`. [...]
 5. **Review the image for the judgment residue** — confirm geometry + judge: visibility / no overlaps / no crossing flows / spacing & alignment / readable labels. A geometric defect lint didn't flag is a finding. [...]
