@@ -1,6 +1,9 @@
 pluginManagement {
     repositories {
         gradlePluginPortal()
+        maven("https://central.sonatype.com/repository/maven-snapshots/") {
+            content { includeGroupByRegex("io\\.miragon.*") }
+        }
     }
 }
 

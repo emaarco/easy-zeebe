@@ -3,15 +3,20 @@
 
 package io.miragon.example.adapter.process
 
+import io.miragon.bpmn.runtime.AbstractFlowNode
+import io.miragon.bpmn.runtime.BoundaryEvent
 import io.miragon.bpmn.runtime.BpmnEngine
-import io.miragon.bpmn.runtime.BpmnFlow
-import io.miragon.bpmn.runtime.BpmnRelations
 import io.miragon.bpmn.runtime.BpmnTimer
 import io.miragon.bpmn.runtime.ElementId
+import io.miragon.bpmn.runtime.FlowScope
+import io.miragon.bpmn.runtime.HasOutgoingFlows
+import io.miragon.bpmn.runtime.HasSuccessors
 import io.miragon.bpmn.runtime.MessageName
 import io.miragon.bpmn.runtime.ProcessId
+import io.miragon.bpmn.runtime.SequenceFlow
 import io.miragon.bpmn.runtime.SignalName
 import io.miragon.bpmn.runtime.VariableName
+import kotlin.Boolean
 import kotlin.String
 import kotlin.Suppress
 
@@ -21,433 +26,547 @@ object MiraveloMembershipProcessApi {
   val PROCESS_ENGINE: BpmnEngine = BpmnEngine.ZEEBE
 
   /**
-   * BPMN element ids as declared in the source model.
-   * Typically used in process-level tests or when searching for tasks.
-   * Worker runtime code rarely needs these.
+   * Typed navigation over the process flow.
+   * Each element is a nested object exposing its `id`, `elementType` and display `name`, plus the elements reachable from it behind `then()` — so a full path is verified by the compiler and offered by autocomplete. Every element is a direct child of `Flow`, whatever its subprocess depth; a subprocess opens its interior via `start()`.
+   * Intended for tooling, tests, and reasoning about the process shape.
    */
-  object Elements {
-    val END_EVENT_MAIL_SENT_AGAIN: ElementId = ElementId("endEvent_mailSentAgain")
+  object Flow {
+    object EndEventMailSentAgain : AbstractFlowNode(
+      id = ElementId("endEvent_mailSentAgain"),
+      elementType = "END_EVENT",
+      name = "Mail sent again",
+    )
 
-    val END_EVENT_MEMBERSHIP_ACTIVATED: ElementId = ElementId("endEvent_membershipActivated")
-
-    val END_EVENT_MEMBERSHIP_CONFIRMED: ElementId = ElementId("endEvent_membershipConfirmed")
-
-    val END_EVENT_MEMBERSHIP_DECLINED: ElementId = ElementId("endEvent_membershipDeclined")
-
-    val END_EVENT_MEMBERSHIP_REJECTED: ElementId = ElementId("endEvent_membershipRejected")
-
-    val EVENT_CLAIM_COMPENSATION: ElementId = ElementId("event_claimCompensation")
-
-    val EVENT_CONFIRMATION_DEADLINE_PASSED: ElementId =
-        ElementId("event_confirmationDeadlinePassed")
-
-    val EVENT_CONFIRMATION_REJECTED: ElementId = ElementId("event_confirmationRejected")
-
-    val EVENT_REMINDER_DUE: ElementId = ElementId("event_reminderDue")
-
-    val GATEWAY_HAS_EMPTY_SPOTS: ElementId = ElementId("gateway_hasEmptySpots")
-
-    val GATEWAY_REVOKE_REASON: ElementId = ElementId("gateway_revokeReason")
-
-    val SERVICE_TASK_CLAIM_MEMBERSHIP: ElementId = ElementId("serviceTask_claimMembership")
-
-    val SERVICE_TASK_RE_SEND_CONFIRMATION_MAIL: ElementId =
-        ElementId("serviceTask_reSendConfirmationMail")
-
-    val SERVICE_TASK_REVOKE_CLAIM: ElementId = ElementId("serviceTask_revokeClaim")
-
-    val SERVICE_TASK_REVOKE_MEMBERSHIP_REQUEST: ElementId =
-        ElementId("serviceTask_revokeMembershipRequest")
-
-    val SERVICE_TASK_SEND_CONFIRMATION_MAIL: ElementId =
-        ElementId("serviceTask_sendConfirmationMail")
-
-    val SERVICE_TASK_SEND_REJECTION_MAIL: ElementId =
-        ElementId("serviceTask_sendRejectionMail")
-
-    val SERVICE_TASK_SEND_WELCOME_MAIL: ElementId = ElementId("serviceTask_sendWelcomeMail")
-
-    val START_EVENT_CONFIRMATION_REQUIRED: ElementId =
-        ElementId("startEvent_confirmationRequired")
-
-    val START_EVENT_MEMBERSHIP_REQUESTED: ElementId =
-        ElementId("startEvent_membershipRequested")
-
-    val SUB_PROCESS_CONFIRM_MEMBERSHIP: ElementId = ElementId("subProcess_confirmMembership")
-
-    val USER_TASK_CONFIRM_MEMBERSHIP: ElementId = ElementId("userTask_confirmMembership")
-  }
-
-  /**
-   * BPMN message names used to correlate messages to running process instances.
-   */
-  object Messages {
-    val MIRAVELO_CONFIRMATION_REJECTED: MessageName =
-        MessageName("miravelo.confirmationRejected")
-
-    val MIRAVELO_MEMBERSHIP_REQUESTED: MessageName =
-        MessageName("miravelo.membershipRequested")
-  }
-
-  /**
-   * Job worker task types used in `@JobWorker(type = ServiceTasks.X)` annotations.
-   * Kept as `const val String` because annotation arguments must be compile-time constants.
-   */
-  object ServiceTasks {
-    const val MIRAVELO_CLAIM_MEMBERSHIP: String = "miravelo.claimMembership"
-
-    const val MIRAVELO_RE_SEND_CONFIRMATION_MAIL: String = "miravelo.reSendConfirmationMail"
-
-    const val MIRAVELO_REVOKE_CLAIM: String = "miravelo.revokeClaim"
-
-    const val MIRAVELO_REVOKE_MEMBERSHIP_REQUEST: String = "miravelo.revokeMembershipRequest"
-
-    const val MIRAVELO_SEND_CONFIRMATION_MAIL: String = "miravelo.sendConfirmationMail"
-
-    const val MIRAVELO_SEND_REJECTION_MAIL: String = "miravelo.sendRejectionMail"
-
-    const val MIRAVELO_SEND_WELCOME_MAIL: String = "miravelo.sendWelcomeMail"
-  }
-
-  object Timers {
-    val EVENT_CONFIRMATION_DEADLINE_PASSED: BpmnTimer = BpmnTimer("Duration", "P3DT12H")
-
-    val EVENT_REMINDER_DUE: BpmnTimer = BpmnTimer("Cycle", "R/P1D")
-  }
-
-  object Compensations {
-    val END_EVENT_MEMBERSHIP_DECLINED: ElementId = ElementId("endEvent_membershipDeclined")
-
-    val EVENT_CLAIM_COMPENSATION: ElementId = ElementId("event_claimCompensation")
-  }
-
-  object Signals {
-    val MIRAVELO_MEMBERSHIP_ACTIVATED: SignalName =
-        SignalName("miravelo.membershipActivated")
-  }
-
-  /**
-   * Process variables grouped by the BPMN element that declares them.
-   * Direction is encoded in each variable's wrapper type: `VariableName.Input`, `VariableName.Output`, or `VariableName.InOut` when the variable is both read and written by the same element.
-   * Consumer APIs that take a specific subtype (e.g. `fun setOutput(v: VariableName.Output)`) get compile-time direction enforcement.
-   */
-  object Variables {
-    object ServiceTaskClaimMembership {
-      val HAS_EMPTY_SPOTS: VariableName.Output = VariableName.Output("hasEmptySpots")
+    object EndEventMembershipActivated : AbstractFlowNode(
+      id = ElementId("endEvent_membershipActivated"),
+      elementType = "SIGNAL_END_EVENT",
+      name = "Membership activated",
+    ) {
+      val signal: SignalName = Signals.MIRAVELO_MEMBERSHIP_ACTIVATED
     }
 
-    object StartEventMembershipRequested {
-      val MEMBERSHIP_ID: VariableName.Output = VariableName.Output("membershipId")
+    object EndEventMembershipConfirmed : AbstractFlowNode(
+      id = ElementId("endEvent_membershipConfirmed"),
+      elementType = "END_EVENT",
+      name = "Membership confirmed",
+    )
+
+    object EndEventMembershipDeclined : AbstractFlowNode(
+      id = ElementId("endEvent_membershipDeclined"),
+      elementType = "COMPENSATION_END_EVENT",
+      name = "Membership declined",
+    )
+
+    object EndEventMembershipRejected : AbstractFlowNode(
+      id = ElementId("endEvent_membershipRejected"),
+      elementType = "END_EVENT",
+      name = "Membership rejected",
+    )
+
+    object EventClaimCompensation : AbstractFlowNode(
+      id = ElementId("event_claimCompensation"),
+      elementType = "COMPENSATION_BOUNDARY_EVENT",
+      name = "Claim made",
+    ), BoundaryEvent {
+      val attachedTo: ServiceTaskClaimMembership
+        get() = ServiceTaskClaimMembership
+
+      val isInterrupting: Boolean = true
     }
-  }
 
-  /**
-   * Sequence flows between BPMN elements.
-   * Mainly useful for process-model tooling, tests, and AI-agent consumers reasoning about the process shape.
-   * Worker code typically does not need these.
-   */
-  object Flows {
-    val FLOW_CLAIM_TO_GATEWAY: BpmnFlow = BpmnFlow(
-          id = "flow_claimToGateway",
-          sourceRef = "serviceTask_claimMembership",
-          targetRef = "gateway_hasEmptySpots",
-        )
+    object EventConfirmationDeadlinePassed : AbstractFlowNode(
+      id = ElementId("event_confirmationDeadlinePassed"),
+      elementType = "TIMER_BOUNDARY_EVENT",
+      name = "Deadline passed",
+    ), HasSuccessors<EventConfirmationDeadlinePassed.Next>,
+        HasOutgoingFlows<EventConfirmationDeadlinePassed.OutgoingFlows>, BoundaryEvent {
+      val timer: BpmnTimer = BpmnTimer(
+        type = "Duration",
+        timerValue = "P3DT12H",
+      )
 
-    val FLOW_CONFIRMATION_MAIL_TO_USER_TASK: BpmnFlow = BpmnFlow(
-          id = "flow_confirmationMailToUserTask",
-          sourceRef = "serviceTask_sendConfirmationMail",
-          targetRef = "userTask_confirmMembership",
-        )
+      val attachedTo: SubProcessConfirmMembership
+        get() = SubProcessConfirmMembership
 
-    val FLOW_GATEWAY_TO_REVOKE: BpmnFlow = BpmnFlow(
-          id = "flow_gatewayToRevoke",
-          sourceRef = "gateway_revokeReason",
-          targetRef = "serviceTask_revokeMembershipRequest",
-        )
+      val isInterrupting: Boolean = true
 
-    val FLOW_NO_SPOTS: BpmnFlow = BpmnFlow(
-          id = "flow_noSpots",
-          name = "No",
-          sourceRef = "gateway_hasEmptySpots",
-          targetRef = "serviceTask_sendRejectionMail",
-          isDefault = true,
-        )
+      override fun then(): Next = Next
 
-    val FLOW_RE_SEND_TO_END: BpmnFlow = BpmnFlow(
-          id = "flow_reSendToEnd",
-          sourceRef = "serviceTask_reSendConfirmationMail",
-          targetRef = "endEvent_mailSentAgain",
-        )
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
 
-    val FLOW_REJECTED_TO_REVOKE: BpmnFlow = BpmnFlow(
-          id = "flow_rejectedToRevoke",
-          sourceRef = "event_confirmationRejected",
-          targetRef = "gateway_revokeReason",
-        )
+      object Next {
+        val gatewayRevokeReason: GatewayRevokeReason
+          get() = GatewayRevokeReason
+      }
 
-    val FLOW_REJECTION_TO_END: BpmnFlow = BpmnFlow(
-          id = "flow_rejectionToEnd",
-          sourceRef = "serviceTask_sendRejectionMail",
-          targetRef = "endEvent_membershipRejected",
-        )
+      object OutgoingFlows {
+        val toGatewayRevokeReason: SequenceFlow<GatewayRevokeReason>
+          get() = SequenceFlow(
+            id = ElementId("flow_timeoutToRevoke"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = GatewayRevokeReason,
+          )
+      }
+    }
 
-    val FLOW_REVOKE_TO_DECLINED: BpmnFlow = BpmnFlow(
-          id = "flow_revokeToDeclined",
-          sourceRef = "serviceTask_revokeMembershipRequest",
-          targetRef = "endEvent_membershipDeclined",
-        )
+    object EventConfirmationRejected : AbstractFlowNode(
+      id = ElementId("event_confirmationRejected"),
+      elementType = "MESSAGE_BOUNDARY_EVENT",
+      name = "Confirmation rejected",
+    ), HasSuccessors<EventConfirmationRejected.Next>,
+        HasOutgoingFlows<EventConfirmationRejected.OutgoingFlows>, BoundaryEvent {
+      val message: MessageName = Messages.MIRAVELO_CONFIRMATION_REJECTED
 
-    val FLOW_START_TO_CLAIM: BpmnFlow = BpmnFlow(
-          id = "flow_startToClaim",
-          sourceRef = "startEvent_membershipRequested",
-          targetRef = "serviceTask_claimMembership",
-        )
+      val attachedTo: SubProcessConfirmMembership
+        get() = SubProcessConfirmMembership
 
-    val FLOW_SUB_PROCESS_TO_WELCOME: BpmnFlow = BpmnFlow(
-          id = "flow_subProcessToWelcome",
-          sourceRef = "subProcess_confirmMembership",
-          targetRef = "serviceTask_sendWelcomeMail",
-        )
+      val isInterrupting: Boolean = true
 
-    val FLOW_SUB_START_TO_CONFIRMATION_MAIL: BpmnFlow = BpmnFlow(
-          id = "flow_subStartToConfirmationMail",
-          sourceRef = "startEvent_confirmationRequired",
-          targetRef = "serviceTask_sendConfirmationMail",
-        )
+      override fun then(): Next = Next
 
-    val FLOW_TIMEOUT_TO_REVOKE: BpmnFlow = BpmnFlow(
-          id = "flow_timeoutToRevoke",
-          sourceRef = "event_confirmationDeadlinePassed",
-          targetRef = "gateway_revokeReason",
-        )
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
 
-    val FLOW_TIMER_TO_RE_SEND: BpmnFlow = BpmnFlow(
-          id = "flow_timerToReSend",
-          sourceRef = "event_reminderDue",
-          targetRef = "serviceTask_reSendConfirmationMail",
-        )
+      object Next {
+        val gatewayRevokeReason: GatewayRevokeReason
+          get() = GatewayRevokeReason
+      }
 
-    val FLOW_USER_TASK_TO_SUB_END: BpmnFlow = BpmnFlow(
-          id = "flow_userTaskToSubEnd",
-          sourceRef = "userTask_confirmMembership",
-          targetRef = "endEvent_membershipConfirmed",
-        )
+      object OutgoingFlows {
+        val toGatewayRevokeReason: SequenceFlow<GatewayRevokeReason>
+          get() = SequenceFlow(
+            id = ElementId("flow_rejectedToRevoke"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = GatewayRevokeReason,
+          )
+      }
+    }
 
-    val FLOW_WELCOME_TO_ACTIVATED: BpmnFlow = BpmnFlow(
-          id = "flow_welcomeToActivated",
-          sourceRef = "serviceTask_sendWelcomeMail",
-          targetRef = "endEvent_membershipActivated",
-        )
+    object EventReminderDue : AbstractFlowNode(
+      id = ElementId("event_reminderDue"),
+      elementType = "TIMER_BOUNDARY_EVENT",
+      name = "Reminder due",
+    ), HasSuccessors<EventReminderDue.Next>, HasOutgoingFlows<EventReminderDue.OutgoingFlows>,
+        BoundaryEvent {
+      val timer: BpmnTimer = BpmnTimer(
+        type = "Cycle",
+        timerValue = "R/P1D",
+      )
 
-    val FLOW_YES_SPOTS: BpmnFlow = BpmnFlow(
-          id = "flow_yesSpots",
-          name = "Yes",
-          sourceRef = "gateway_hasEmptySpots",
-          targetRef = "subProcess_confirmMembership",
-          condition = "=hasEmptySpots",
-        )
-  }
+      val attachedTo: SubProcessConfirmMembership
+        get() = SubProcessConfirmMembership
 
-  /**
-   * Per-element graph metadata (previousElements / followingElements / parentId / boundary attachments).
-   * Intended for tooling and tests, not worker runtime code.
-   */
-  object Relations {
-    val END_EVENT_MAIL_SENT_AGAIN: BpmnRelations = BpmnRelations(
-          name = "Mail sent again",
-          previousElements = listOf("serviceTask_reSendConfirmationMail"),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      val isInterrupting: Boolean = false
 
-    val END_EVENT_MEMBERSHIP_ACTIVATED: BpmnRelations = BpmnRelations(
-          name = "Membership activated",
-          previousElements = listOf("serviceTask_sendWelcomeMail"),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      override fun then(): Next = Next
 
-    val END_EVENT_MEMBERSHIP_CONFIRMED: BpmnRelations = BpmnRelations(
-          name = "Membership confirmed",
-          previousElements = listOf("userTask_confirmMembership"),
-          followingElements = emptyList(),
-          parentId = "subProcess_confirmMembership",
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
 
-    val END_EVENT_MEMBERSHIP_DECLINED: BpmnRelations = BpmnRelations(
-          name = "Membership declined",
-          previousElements = listOf("serviceTask_revokeMembershipRequest"),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      object Next {
+        val serviceTaskReSendConfirmationMail: ServiceTaskReSendConfirmationMail
+          get() = ServiceTaskReSendConfirmationMail
+      }
 
-    val END_EVENT_MEMBERSHIP_REJECTED: BpmnRelations = BpmnRelations(
-          name = "Membership rejected",
-          previousElements = listOf("serviceTask_sendRejectionMail"),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      object OutgoingFlows {
+        val toServiceTaskReSendConfirmationMail:
+            SequenceFlow<ServiceTaskReSendConfirmationMail>
+          get() = SequenceFlow(
+            id = ElementId("flow_timerToReSend"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = ServiceTaskReSendConfirmationMail,
+          )
+      }
+    }
 
-    val EVENT_CLAIM_COMPENSATION: BpmnRelations = BpmnRelations(
-          name = "Claim made",
-          previousElements = emptyList(),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = "serviceTask_claimMembership",
-          attachedElements = emptyList(),
-        )
+    object GatewayHasEmptySpots : AbstractFlowNode(
+      id = ElementId("gateway_hasEmptySpots"),
+      elementType = "EXCLUSIVE_GATEWAY",
+      name = "Has empty spots?",
+    ), HasSuccessors<GatewayHasEmptySpots.Next>,
+        HasOutgoingFlows<GatewayHasEmptySpots.OutgoingFlows> {
+      override fun then(): Next = Next
 
-    val EVENT_CONFIRMATION_DEADLINE_PASSED: BpmnRelations = BpmnRelations(
-          name = "Deadline passed",
-          previousElements = emptyList(),
-          followingElements = listOf("gateway_revokeReason"),
-          parentId = null,
-          attachedToRef = "subProcess_confirmMembership",
-          attachedElements = emptyList(),
-        )
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
 
-    val EVENT_CONFIRMATION_REJECTED: BpmnRelations = BpmnRelations(
-          name = "Confirmation rejected",
-          previousElements = emptyList(),
-          followingElements = listOf("gateway_revokeReason"),
-          parentId = null,
-          attachedToRef = "subProcess_confirmMembership",
-          attachedElements = emptyList(),
-        )
+      object Next {
+        val serviceTaskSendRejectionMail: ServiceTaskSendRejectionMail
+          get() = ServiceTaskSendRejectionMail
 
-    val EVENT_REMINDER_DUE: BpmnRelations = BpmnRelations(
-          name = "Reminder due",
-          previousElements = emptyList(),
-          followingElements = listOf("serviceTask_reSendConfirmationMail"),
-          parentId = null,
-          attachedToRef = "subProcess_confirmMembership",
-          attachedElements = emptyList(),
-        )
+        val subProcessConfirmMembership: SubProcessConfirmMembership
+          get() = SubProcessConfirmMembership
+      }
 
-    val GATEWAY_HAS_EMPTY_SPOTS: BpmnRelations = BpmnRelations(
-          name = "Has empty spots?",
-          previousElements = listOf("serviceTask_claimMembership"),
-          followingElements = listOf("subProcess_confirmMembership", "serviceTask_sendRejectionMail"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      object OutgoingFlows {
+        val toServiceTaskSendRejectionMail: SequenceFlow<ServiceTaskSendRejectionMail>
+          get() = SequenceFlow(
+            id = ElementId("flow_noSpots"),
+            name = "No",
+            conditionExpression = null,
+            isDefault = true,
+            target = ServiceTaskSendRejectionMail,
+          )
 
-    val GATEWAY_REVOKE_REASON: BpmnRelations = BpmnRelations(
-          previousElements = listOf("event_confirmationDeadlinePassed", "event_confirmationRejected"),
-          followingElements = listOf("serviceTask_revokeMembershipRequest"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+        val toSubProcessConfirmMembership: SequenceFlow<SubProcessConfirmMembership>
+          get() = SequenceFlow(
+            id = ElementId("flow_yesSpots"),
+            name = "Yes",
+            conditionExpression = "=hasEmptySpots",
+            isDefault = false,
+            target = SubProcessConfirmMembership,
+          )
+      }
+    }
 
-    val SERVICE_TASK_CLAIM_MEMBERSHIP: BpmnRelations = BpmnRelations(
-          name = "Claim Membership",
-          previousElements = listOf("startEvent_membershipRequested"),
-          followingElements = listOf("gateway_hasEmptySpots"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = listOf("event_claimCompensation"),
-        )
+    object GatewayRevokeReason : AbstractFlowNode(
+      id = ElementId("gateway_revokeReason"),
+      elementType = "EXCLUSIVE_GATEWAY",
+    ), HasSuccessors<GatewayRevokeReason.Next>,
+        HasOutgoingFlows<GatewayRevokeReason.OutgoingFlows> {
+      override fun then(): Next = Next
 
-    val SERVICE_TASK_RE_SEND_CONFIRMATION_MAIL: BpmnRelations = BpmnRelations(
-          name = "Re-Send Confirmation Mail",
-          previousElements = listOf("event_reminderDue"),
-          followingElements = listOf("endEvent_mailSentAgain"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
 
-    val SERVICE_TASK_REVOKE_CLAIM: BpmnRelations = BpmnRelations(
-          name = "Revoke Claim",
-          previousElements = emptyList(),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      object Next {
+        val serviceTaskRevokeMembershipRequest: ServiceTaskRevokeMembershipRequest
+          get() = ServiceTaskRevokeMembershipRequest
+      }
 
-    val SERVICE_TASK_REVOKE_MEMBERSHIP_REQUEST: BpmnRelations = BpmnRelations(
-          name = "Revoke Membership Request",
-          previousElements = listOf("gateway_revokeReason"),
-          followingElements = listOf("endEvent_membershipDeclined"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      object OutgoingFlows {
+        val toServiceTaskRevokeMembershipRequest:
+            SequenceFlow<ServiceTaskRevokeMembershipRequest>
+          get() = SequenceFlow(
+            id = ElementId("flow_gatewayToRevoke"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = ServiceTaskRevokeMembershipRequest,
+          )
+      }
+    }
 
-    val SERVICE_TASK_SEND_CONFIRMATION_MAIL: BpmnRelations = BpmnRelations(
-          name = "Send Confirmation Mail",
-          previousElements = listOf("startEvent_confirmationRequired"),
-          followingElements = listOf("userTask_confirmMembership"),
-          parentId = "subProcess_confirmMembership",
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+    object ServiceTaskClaimMembership : AbstractFlowNode(
+      id = ElementId("serviceTask_claimMembership"),
+      elementType = "SERVICE_TASK",
+      name = "Claim Membership",
+    ), HasSuccessors<ServiceTaskClaimMembership.Next>,
+        HasOutgoingFlows<ServiceTaskClaimMembership.OutgoingFlows> {
+      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_CLAIM_MEMBERSHIP
 
-    val SERVICE_TASK_SEND_REJECTION_MAIL: BpmnRelations = BpmnRelations(
-          name = "Send Rejection Mail",
-          previousElements = listOf("gateway_hasEmptySpots"),
-          followingElements = listOf("endEvent_membershipRejected"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      override fun then(): Next = Next
 
-    val SERVICE_TASK_SEND_WELCOME_MAIL: BpmnRelations = BpmnRelations(
-          name = "Send Welcome Mail",
-          previousElements = listOf("subProcess_confirmMembership"),
-          followingElements = listOf("endEvent_membershipActivated"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
 
-    val START_EVENT_CONFIRMATION_REQUIRED: BpmnRelations = BpmnRelations(
-          name = "Confirmation required",
-          previousElements = emptyList(),
-          followingElements = listOf("serviceTask_sendConfirmationMail"),
-          parentId = "subProcess_confirmMembership",
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      object Variables {
+        val HAS_EMPTY_SPOTS: VariableName.Output = VariableName.Output("hasEmptySpots")
+      }
 
-    val START_EVENT_MEMBERSHIP_REQUESTED: BpmnRelations = BpmnRelations(
-          name = "Membership requested",
-          previousElements = emptyList(),
-          followingElements = listOf("serviceTask_claimMembership"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      object Next {
+        val eventClaimCompensation: EventClaimCompensation
+          get() = EventClaimCompensation
 
-    val SUB_PROCESS_CONFIRM_MEMBERSHIP: BpmnRelations = BpmnRelations(
-          name = "Confirm Membership",
-          previousElements = listOf("gateway_hasEmptySpots"),
-          followingElements = listOf("serviceTask_sendWelcomeMail"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = listOf("event_reminderDue", "event_confirmationRejected", "event_confirmationDeadlinePassed"),
-        )
+        val gatewayHasEmptySpots: GatewayHasEmptySpots
+          get() = GatewayHasEmptySpots
+      }
 
-    val USER_TASK_CONFIRM_MEMBERSHIP: BpmnRelations = BpmnRelations(
-          name = "Confirm Membership",
-          previousElements = listOf("serviceTask_sendConfirmationMail"),
-          followingElements = listOf("endEvent_membershipConfirmed"),
-          parentId = "subProcess_confirmMembership",
-          attachedToRef = null,
-          attachedElements = emptyList(),
-        )
+      object OutgoingFlows {
+        val toGatewayHasEmptySpots: SequenceFlow<GatewayHasEmptySpots>
+          get() = SequenceFlow(
+            id = ElementId("flow_claimToGateway"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = GatewayHasEmptySpots,
+          )
+      }
+    }
+
+    object ServiceTaskReSendConfirmationMail : AbstractFlowNode(
+      id = ElementId("serviceTask_reSendConfirmationMail"),
+      elementType = "SERVICE_TASK",
+      name = "Re-Send Confirmation Mail",
+    ), HasSuccessors<ServiceTaskReSendConfirmationMail.Next>,
+        HasOutgoingFlows<ServiceTaskReSendConfirmationMail.OutgoingFlows> {
+      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_RE_SEND_CONFIRMATION_MAIL
+
+      override fun then(): Next = Next
+
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
+
+      object Next {
+        val endEventMailSentAgain: EndEventMailSentAgain
+          get() = EndEventMailSentAgain
+      }
+
+      object OutgoingFlows {
+        val toEndEventMailSentAgain: SequenceFlow<EndEventMailSentAgain>
+          get() = SequenceFlow(
+            id = ElementId("flow_reSendToEnd"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = EndEventMailSentAgain,
+          )
+      }
+    }
+
+    object ServiceTaskRevokeClaim : AbstractFlowNode(
+      id = ElementId("serviceTask_revokeClaim"),
+      elementType = "SERVICE_TASK",
+      name = "Revoke Claim",
+    ) {
+      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_REVOKE_CLAIM
+    }
+
+    object ServiceTaskRevokeMembershipRequest : AbstractFlowNode(
+      id = ElementId("serviceTask_revokeMembershipRequest"),
+      elementType = "SERVICE_TASK",
+      name = "Revoke Membership Request",
+    ), HasSuccessors<ServiceTaskRevokeMembershipRequest.Next>,
+        HasOutgoingFlows<ServiceTaskRevokeMembershipRequest.OutgoingFlows> {
+      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_REVOKE_MEMBERSHIP_REQUEST
+
+      override fun then(): Next = Next
+
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
+
+      object Next {
+        val endEventMembershipDeclined: EndEventMembershipDeclined
+          get() = EndEventMembershipDeclined
+      }
+
+      object OutgoingFlows {
+        val toEndEventMembershipDeclined: SequenceFlow<EndEventMembershipDeclined>
+          get() = SequenceFlow(
+            id = ElementId("flow_revokeToDeclined"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = EndEventMembershipDeclined,
+          )
+      }
+    }
+
+    object ServiceTaskSendConfirmationMail : AbstractFlowNode(
+      id = ElementId("serviceTask_sendConfirmationMail"),
+      elementType = "SERVICE_TASK",
+      name = "Send Confirmation Mail",
+    ), HasSuccessors<ServiceTaskSendConfirmationMail.Next>,
+        HasOutgoingFlows<ServiceTaskSendConfirmationMail.OutgoingFlows> {
+      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_SEND_CONFIRMATION_MAIL
+
+      override fun then(): Next = Next
+
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
+
+      object Next {
+        val userTaskConfirmMembership: UserTaskConfirmMembership
+          get() = UserTaskConfirmMembership
+      }
+
+      object OutgoingFlows {
+        val toUserTaskConfirmMembership: SequenceFlow<UserTaskConfirmMembership>
+          get() = SequenceFlow(
+            id = ElementId("flow_confirmationMailToUserTask"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = UserTaskConfirmMembership,
+          )
+      }
+    }
+
+    object ServiceTaskSendRejectionMail : AbstractFlowNode(
+      id = ElementId("serviceTask_sendRejectionMail"),
+      elementType = "SERVICE_TASK",
+      name = "Send Rejection Mail",
+    ), HasSuccessors<ServiceTaskSendRejectionMail.Next>,
+        HasOutgoingFlows<ServiceTaskSendRejectionMail.OutgoingFlows> {
+      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_SEND_REJECTION_MAIL
+
+      override fun then(): Next = Next
+
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
+
+      object Next {
+        val endEventMembershipRejected: EndEventMembershipRejected
+          get() = EndEventMembershipRejected
+      }
+
+      object OutgoingFlows {
+        val toEndEventMembershipRejected: SequenceFlow<EndEventMembershipRejected>
+          get() = SequenceFlow(
+            id = ElementId("flow_rejectionToEnd"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = EndEventMembershipRejected,
+          )
+      }
+    }
+
+    object ServiceTaskSendWelcomeMail : AbstractFlowNode(
+      id = ElementId("serviceTask_sendWelcomeMail"),
+      elementType = "SERVICE_TASK",
+      name = "Send Welcome Mail",
+    ), HasSuccessors<ServiceTaskSendWelcomeMail.Next>,
+        HasOutgoingFlows<ServiceTaskSendWelcomeMail.OutgoingFlows> {
+      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_SEND_WELCOME_MAIL
+
+      override fun then(): Next = Next
+
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
+
+      object Next {
+        val endEventMembershipActivated: EndEventMembershipActivated
+          get() = EndEventMembershipActivated
+      }
+
+      object OutgoingFlows {
+        val toEndEventMembershipActivated: SequenceFlow<EndEventMembershipActivated>
+          get() = SequenceFlow(
+            id = ElementId("flow_welcomeToActivated"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = EndEventMembershipActivated,
+          )
+      }
+    }
+
+    object StartEventConfirmationRequired : AbstractFlowNode(
+      id = ElementId("startEvent_confirmationRequired"),
+      elementType = "START_EVENT",
+      name = "Confirmation required",
+    ), HasSuccessors<StartEventConfirmationRequired.Next>,
+        HasOutgoingFlows<StartEventConfirmationRequired.OutgoingFlows> {
+      override fun then(): Next = Next
+
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
+
+      object Next {
+        val serviceTaskSendConfirmationMail: ServiceTaskSendConfirmationMail
+          get() = ServiceTaskSendConfirmationMail
+      }
+
+      object OutgoingFlows {
+        val toServiceTaskSendConfirmationMail: SequenceFlow<ServiceTaskSendConfirmationMail>
+          get() = SequenceFlow(
+            id = ElementId("flow_subStartToConfirmationMail"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = ServiceTaskSendConfirmationMail,
+          )
+      }
+    }
+
+    object StartEventMembershipRequested : AbstractFlowNode(
+      id = ElementId("startEvent_membershipRequested"),
+      elementType = "MESSAGE_START_EVENT",
+      name = "Membership requested",
+    ), HasSuccessors<StartEventMembershipRequested.Next>,
+        HasOutgoingFlows<StartEventMembershipRequested.OutgoingFlows> {
+      val message: MessageName = Messages.MIRAVELO_MEMBERSHIP_REQUESTED
+
+      override fun then(): Next = Next
+
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
+
+      object Variables {
+        val MEMBERSHIP_ID: VariableName.Output = VariableName.Output("membershipId")
+      }
+
+      object Next {
+        val serviceTaskClaimMembership: ServiceTaskClaimMembership
+          get() = ServiceTaskClaimMembership
+      }
+
+      object OutgoingFlows {
+        val toServiceTaskClaimMembership: SequenceFlow<ServiceTaskClaimMembership>
+          get() = SequenceFlow(
+            id = ElementId("flow_startToClaim"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = ServiceTaskClaimMembership,
+          )
+      }
+    }
+
+    object SubProcessConfirmMembership : AbstractFlowNode(
+      id = ElementId("subProcess_confirmMembership"),
+      elementType = "SUB_PROCESS",
+      name = "Confirm Membership",
+    ), HasSuccessors<SubProcessConfirmMembership.Next>,
+        HasOutgoingFlows<SubProcessConfirmMembership.OutgoingFlows>,
+        FlowScope<SubProcessConfirmMembership.Start> {
+      override fun then(): Next = Next
+
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
+
+      override fun start(): Start = Start
+
+      object Next {
+        val eventConfirmationDeadlinePassed: EventConfirmationDeadlinePassed
+          get() = EventConfirmationDeadlinePassed
+
+        val eventConfirmationRejected: EventConfirmationRejected
+          get() = EventConfirmationRejected
+
+        val eventReminderDue: EventReminderDue
+          get() = EventReminderDue
+
+        val serviceTaskSendWelcomeMail: ServiceTaskSendWelcomeMail
+          get() = ServiceTaskSendWelcomeMail
+      }
+
+      object OutgoingFlows {
+        val toServiceTaskSendWelcomeMail: SequenceFlow<ServiceTaskSendWelcomeMail>
+          get() = SequenceFlow(
+            id = ElementId("flow_subProcessToWelcome"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = ServiceTaskSendWelcomeMail,
+          )
+      }
+
+      object Start {
+        val startEventConfirmationRequired: StartEventConfirmationRequired
+          get() = StartEventConfirmationRequired
+      }
+    }
+
+    object UserTaskConfirmMembership : AbstractFlowNode(
+      id = ElementId("userTask_confirmMembership"),
+      elementType = "USER_TASK",
+      name = "Confirm Membership",
+    ), HasSuccessors<UserTaskConfirmMembership.Next>,
+        HasOutgoingFlows<UserTaskConfirmMembership.OutgoingFlows> {
+      override fun then(): Next = Next
+
+      override fun outgoingFlows(): OutgoingFlows = OutgoingFlows
+
+      object Next {
+        val endEventMembershipConfirmed: EndEventMembershipConfirmed
+          get() = EndEventMembershipConfirmed
+      }
+
+      object OutgoingFlows {
+        val toEndEventMembershipConfirmed: SequenceFlow<EndEventMembershipConfirmed>
+          get() = SequenceFlow(
+            id = ElementId("flow_userTaskToSubEnd"),
+            name = null,
+            conditionExpression = null,
+            isDefault = false,
+            target = EndEventMembershipConfirmed,
+          )
+      }
+    }
   }
 }

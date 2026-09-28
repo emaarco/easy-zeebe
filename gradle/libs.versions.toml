@@ -11,7 +11,7 @@ zeebe_version = "8.9.17"
 testcontainers_version = "2.0.5"
 postgres_version = "42.7.13"
 konsist_version = "0.17.3"
-bpmn_to_code_version = "5.2.0"
+bpmn_to_code_version = "6.0.0-SNAPSHOT"
 
 [libraries]
 web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring_version" }
