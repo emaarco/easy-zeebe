@@ -4,15 +4,28 @@
 package io.miragon.example.adapter.process
 
 import io.miragon.bpmn.runtime.MessageName
+import kotlin.String
 import kotlin.Suppress
+import kotlin.collections.List
 
 /**
  * BPMN message names used to correlate messages to running process instances.
  */
 object Messages {
   val MIRAVELO_CONFIRMATION_REJECTED: MessageName =
-      MessageName("miravelo.confirmationRejected")
+      MessageName(Names.MIRAVELO_CONFIRMATION_REJECTED)
 
   val MIRAVELO_MEMBERSHIP_REQUESTED: MessageName =
-      MessageName("miravelo.membershipRequested")
+      MessageName(Names.MIRAVELO_MEMBERSHIP_REQUESTED)
+
+  val entries: List<MessageName> = listOf(
+    MIRAVELO_CONFIRMATION_REJECTED,
+    MIRAVELO_MEMBERSHIP_REQUESTED,
+  )
+
+  object Names {
+    const val MIRAVELO_CONFIRMATION_REJECTED: String = "miravelo.confirmationRejected"
+
+    const val MIRAVELO_MEMBERSHIP_REQUESTED: String = "miravelo.membershipRequested"
+  }
 }

@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe
 
-import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.Flow.ServiceTaskClaimMembership
+import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.FlowNodes.ServiceTaskClaimMembership
 import io.miragon.example.application.port.inbound.ClaimMembershipUseCase
 import io.miragon.example.domain.MembershipId
 import io.mockk.confirmVerified

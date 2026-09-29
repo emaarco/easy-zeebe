@@ -5,6 +5,7 @@ package io.miragon.example.adapter.process
 
 import kotlin.String
 import kotlin.Suppress
+import kotlin.collections.List
 
 /**
  * Job worker task types used in `@JobWorker(type = ServiceTasks.X)` annotations.
@@ -24,4 +25,14 @@ object ServiceTasks {
   const val MIRAVELO_SEND_REJECTION_MAIL: String = "miravelo.sendRejectionMail"
 
   const val MIRAVELO_SEND_WELCOME_MAIL: String = "miravelo.sendWelcomeMail"
+
+  val entries: List<String> = listOf(
+    MIRAVELO_CLAIM_MEMBERSHIP,
+    MIRAVELO_RE_SEND_CONFIRMATION_MAIL,
+    MIRAVELO_REVOKE_CLAIM,
+    MIRAVELO_REVOKE_MEMBERSHIP_REQUEST,
+    MIRAVELO_SEND_CONFIRMATION_MAIL,
+    MIRAVELO_SEND_REJECTION_MAIL,
+    MIRAVELO_SEND_WELCOME_MAIL,
+  )
 }

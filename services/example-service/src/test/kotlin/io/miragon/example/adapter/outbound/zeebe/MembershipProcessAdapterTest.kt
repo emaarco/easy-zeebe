@@ -39,7 +39,7 @@ class MembershipProcessAdapterTest {
 
         // Given
         val membershipId = MembershipId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
-        val expectedVariables: Map<VariableName, Any> = mapOf(MiraveloMembershipProcessApi.Flow.StartEventMembershipRequested.Variables.MEMBERSHIP_ID to membershipId.value.toString())
+        val expectedVariables: Map<VariableName, Any> = mapOf(MiraveloMembershipProcessApi.FlowNodes.StartEventMembershipRequested.Variables.MEMBERSHIP_ID to membershipId.value.toString())
         every { engineApi.sendMessage(any(), any(), any()) } just Runs
 
         // When
@@ -86,10 +86,10 @@ class MembershipProcessAdapterTest {
 
         // Then: the adapter applied the expected filter and completed the task it found
         verify { capturedFilter.state(UserTaskState.CREATED) }
-        verify { capturedFilter.elementId(MiraveloMembershipProcessApi.Flow.UserTaskConfirmMembership.id.value) }
+        verify { capturedFilter.elementId(MiraveloMembershipProcessApi.FlowNodes.UserTaskConfirmMembership.id.value) }
         verify {
             capturedFilter.processInstanceVariables(
-                mapOf(MiraveloMembershipProcessApi.Flow.StartEventMembershipRequested.Variables.MEMBERSHIP_ID.value to "\"${membershipId.value}\"")
+                mapOf(MiraveloMembershipProcessApi.FlowNodes.StartEventMembershipRequested.Variables.MEMBERSHIP_ID.value to "\"${membershipId.value}\"")
             )
         }
         verify { camundaClient.newCompleteUserTaskCommand(expectedUserTaskKey) }
