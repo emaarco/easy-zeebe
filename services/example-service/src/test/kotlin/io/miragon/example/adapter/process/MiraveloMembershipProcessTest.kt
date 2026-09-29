@@ -12,7 +12,6 @@ import io.miragon.bpmn.runtime.path.inside
 import io.miragon.bpmn.runtime.path.interruptedBy
 import io.miragon.bpmn.runtime.path.onto
 import io.miragon.bpmn.runtime.path.then
-import io.miragon.bpmn.runtime.path.via
 import io.miragon.common.test.assertions.hasCompletedElements
 import io.miragon.common.test.assertions.hasCompletedElementsInOrder
 import io.miragon.common.test.config.TestProcessEngineConfiguration
@@ -157,7 +156,7 @@ class MiraveloMembershipProcessTest {
         val expectedPath = ProcessPath.from(FlowNodes.StartEventMembershipRequested)
             .then { it.serviceTaskClaimMembership }
             .then { it.gatewayHasEmptySpots }
-            .via { it.toServiceTaskSendRejectionMail }
+            .then { it.serviceTaskSendRejectionMail }
             .then { it.endEventMembershipRejected }
 
         val instance = ProcessInstanceSelectors.byKey(instanceKey)

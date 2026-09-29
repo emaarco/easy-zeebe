@@ -4,7 +4,6 @@
 package io.miragon.example.adapter.process
 
 import io.miragon.bpmn.runtime.MessageName
-import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.List
 
@@ -13,19 +12,13 @@ import kotlin.collections.List
  */
 object Messages {
   val MIRAVELO_CONFIRMATION_REJECTED: MessageName =
-      MessageName(Names.MIRAVELO_CONFIRMATION_REJECTED)
+      MessageName("miravelo.confirmationRejected")
 
   val MIRAVELO_MEMBERSHIP_REQUESTED: MessageName =
-      MessageName(Names.MIRAVELO_MEMBERSHIP_REQUESTED)
+      MessageName("miravelo.membershipRequested")
 
   val entries: List<MessageName> = listOf(
     MIRAVELO_CONFIRMATION_REJECTED,
     MIRAVELO_MEMBERSHIP_REQUESTED,
   )
-
-  object Names {
-    const val MIRAVELO_CONFIRMATION_REJECTED: String = "miravelo.confirmationRejected"
-
-    const val MIRAVELO_MEMBERSHIP_REQUESTED: String = "miravelo.membershipRequested"
-  }
 }

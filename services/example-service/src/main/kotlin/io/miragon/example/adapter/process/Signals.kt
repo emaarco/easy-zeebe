@@ -4,7 +4,6 @@
 package io.miragon.example.adapter.process
 
 import io.miragon.bpmn.runtime.SignalName
-import kotlin.String
 import kotlin.Suppress
 import kotlin.collections.List
 
@@ -12,14 +11,9 @@ import kotlin.collections.List
  * BPMN signal names broadcast and caught by signal events.
  */
 object Signals {
-  val MIRAVELO_MEMBERSHIP_ACTIVATED: SignalName =
-      SignalName(Names.MIRAVELO_MEMBERSHIP_ACTIVATED)
+  val MIRAVELO_MEMBERSHIP_ACTIVATED: SignalName = SignalName("miravelo.membershipActivated")
 
   val entries: List<SignalName> = listOf(
     MIRAVELO_MEMBERSHIP_ACTIVATED,
   )
-
-  object Names {
-    const val MIRAVELO_MEMBERSHIP_ACTIVATED: String = "miravelo.membershipActivated"
-  }
 }
