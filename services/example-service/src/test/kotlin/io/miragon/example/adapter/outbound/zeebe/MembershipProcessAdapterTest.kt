@@ -13,6 +13,7 @@ import io.miragon.bpmn.runtime.VariableName
 import io.miragon.common.zeebe.engine.ProcessEngineApi
 import io.miragon.example.adapter.process.Messages
 import io.miragon.example.adapter.process.MiraveloMembershipProcessApi
+import io.miragon.example.adapter.process.ProcessVariables
 import io.miragon.example.domain.MembershipId
 import io.mockk.Runs
 import io.mockk.confirmVerified
@@ -89,7 +90,7 @@ class MembershipProcessAdapterTest {
         verify { capturedFilter.elementId(MiraveloMembershipProcessApi.FlowNodes.UserTaskConfirmMembership.id.value) }
         verify {
             capturedFilter.processInstanceVariables(
-                mapOf(MiraveloMembershipProcessApi.FlowNodes.StartEventMembershipRequested.Variables.MEMBERSHIP_ID.value to "\"${membershipId.value}\"")
+                mapOf(ProcessVariables.MEMBERSHIP_ID to "\"${membershipId.value}\"")
             )
         }
         verify { camundaClient.newCompleteUserTaskCommand(expectedUserTaskKey) }

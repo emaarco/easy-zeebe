@@ -5,6 +5,7 @@ import io.camunda.client.api.search.enums.UserTaskState
 import io.miragon.common.zeebe.engine.ProcessEngineApi
 import io.miragon.example.adapter.process.Messages
 import io.miragon.example.adapter.process.MiraveloMembershipProcessApi
+import io.miragon.example.adapter.process.ProcessVariables
 import io.miragon.example.application.port.outbound.MembershipProcess
 import io.miragon.example.domain.MembershipId
 import org.springframework.stereotype.Component
@@ -41,7 +42,7 @@ class MembershipProcessAdapter(
                 filter.state(UserTaskState.CREATED)
                 filter.elementId(MiraveloMembershipProcessApi.FlowNodes.UserTaskConfirmMembership.id.value)
                 filter.processInstanceVariables(
-                    mapOf(MiraveloMembershipProcessApi.FlowNodes.StartEventMembershipRequested.Variables.MEMBERSHIP_ID.value to "\"${id.value}\"")
+                    mapOf(ProcessVariables.MEMBERSHIP_ID to "\"${id.value}\"")
                 )
             }
             .send()
