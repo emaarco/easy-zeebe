@@ -156,7 +156,7 @@ object MiraveloMembershipProcessApi {
 
       object Next {
         val gatewayRevokeReason: SequenceFlows<GatewayRevokeReason>
-          get() = SequenceFlows(target = GatewayRevokeReason, flows = listOf(Flows.FLOW_TIMEOUT_TO_REVOKE))
+          get() = SequenceFlows(target = GatewayRevokeReason, flowId = ElementId("flow_timeoutToRevoke"))
       }
     }
 
@@ -181,7 +181,7 @@ object MiraveloMembershipProcessApi {
 
       object Next {
         val gatewayRevokeReason: SequenceFlows<GatewayRevokeReason>
-          get() = SequenceFlows(target = GatewayRevokeReason, flows = listOf(Flows.FLOW_REJECTED_TO_REVOKE))
+          get() = SequenceFlows(target = GatewayRevokeReason, flowId = ElementId("flow_rejectedToRevoke"))
       }
     }
 
@@ -210,7 +210,7 @@ object MiraveloMembershipProcessApi {
       object Next {
         val serviceTaskReSendConfirmationMail:
             SequenceFlows<ServiceTaskReSendConfirmationMail>
-          get() = SequenceFlows(target = ServiceTaskReSendConfirmationMail, flows = listOf(Flows.FLOW_TIMER_TO_RE_SEND))
+          get() = SequenceFlows(target = ServiceTaskReSendConfirmationMail, flowId = ElementId("flow_timerToReSend"))
       }
     }
 
@@ -225,10 +225,30 @@ object MiraveloMembershipProcessApi {
 
       object Next {
         val serviceTaskSendRejectionMail: SequenceFlows<ServiceTaskSendRejectionMail>
-          get() = SequenceFlows(target = ServiceTaskSendRejectionMail, flows = listOf(Flows.FLOW_NO_SPOTS))
+          get() = SequenceFlows(
+            target = ServiceTaskSendRejectionMail,
+            flows = listOf(
+              SequenceFlow(
+                id = ElementId("flow_noSpots"),
+                name = "No",
+                isDefault = true,
+                target = ServiceTaskSendRejectionMail,
+              ),
+            ),
+          )
 
         val subProcessConfirmMembership: SequenceFlows<SubProcessConfirmMembership>
-          get() = SequenceFlows(target = SubProcessConfirmMembership, flows = listOf(Flows.FLOW_YES_SPOTS))
+          get() = SequenceFlows(
+            target = SubProcessConfirmMembership,
+            flows = listOf(
+              SequenceFlow(
+                id = ElementId("flow_yesSpots"),
+                name = "Yes",
+                conditionExpression = "=hasEmptySpots",
+                target = SubProcessConfirmMembership,
+              ),
+            ),
+          )
       }
     }
 
@@ -243,7 +263,7 @@ object MiraveloMembershipProcessApi {
       object Next {
         val serviceTaskRevokeMembershipRequest:
             SequenceFlows<ServiceTaskRevokeMembershipRequest>
-          get() = SequenceFlows(target = ServiceTaskRevokeMembershipRequest, flows = listOf(Flows.FLOW_GATEWAY_TO_REVOKE))
+          get() = SequenceFlows(target = ServiceTaskRevokeMembershipRequest, flowId = ElementId("flow_gatewayToRevoke"))
       }
     }
 
@@ -259,11 +279,8 @@ object MiraveloMembershipProcessApi {
       override val next: Next = Next
 
       object Variables {
-        val HAS_EMPTY_SPOTS: VariableName.Output = VariableName.Output(Names.HAS_EMPTY_SPOTS)
-
-        object Names {
-          const val HAS_EMPTY_SPOTS: String = "hasEmptySpots"
-        }
+        val HAS_EMPTY_SPOTS: VariableName.Output =
+            VariableName.Output(ProcessVariables.HAS_EMPTY_SPOTS)
       }
 
       object Next {
@@ -271,7 +288,7 @@ object MiraveloMembershipProcessApi {
           get() = AttachedBoundaryEvent(target = EventClaimCompensation)
 
         val gatewayHasEmptySpots: SequenceFlows<GatewayHasEmptySpots>
-          get() = SequenceFlows(target = GatewayHasEmptySpots, flows = listOf(Flows.FLOW_CLAIM_TO_GATEWAY))
+          get() = SequenceFlows(target = GatewayHasEmptySpots, flowId = ElementId("flow_claimToGateway"))
       }
     }
 
@@ -288,7 +305,7 @@ object MiraveloMembershipProcessApi {
 
       object Next {
         val endEventMailSentAgain: SequenceFlows<EndEventMailSentAgain>
-          get() = SequenceFlows(target = EndEventMailSentAgain, flows = listOf(Flows.FLOW_RE_SEND_TO_END))
+          get() = SequenceFlows(target = EndEventMailSentAgain, flowId = ElementId("flow_reSendToEnd"))
       }
     }
 
@@ -315,7 +332,7 @@ object MiraveloMembershipProcessApi {
 
       object Next {
         val endEventMembershipDeclined: SequenceFlows<EndEventMembershipDeclined>
-          get() = SequenceFlows(target = EndEventMembershipDeclined, flows = listOf(Flows.FLOW_REVOKE_TO_DECLINED))
+          get() = SequenceFlows(target = EndEventMembershipDeclined, flowId = ElementId("flow_revokeToDeclined"))
       }
     }
 
@@ -332,7 +349,7 @@ object MiraveloMembershipProcessApi {
 
       object Next {
         val userTaskConfirmMembership: SequenceFlows<UserTaskConfirmMembership>
-          get() = SequenceFlows(target = UserTaskConfirmMembership, flows = listOf(Flows.FLOW_CONFIRMATION_MAIL_TO_USER_TASK))
+          get() = SequenceFlows(target = UserTaskConfirmMembership, flowId = ElementId("flow_confirmationMailToUserTask"))
       }
     }
 
@@ -349,7 +366,7 @@ object MiraveloMembershipProcessApi {
 
       object Next {
         val endEventMembershipRejected: SequenceFlows<EndEventMembershipRejected>
-          get() = SequenceFlows(target = EndEventMembershipRejected, flows = listOf(Flows.FLOW_REJECTION_TO_END))
+          get() = SequenceFlows(target = EndEventMembershipRejected, flowId = ElementId("flow_rejectionToEnd"))
       }
     }
 
@@ -366,7 +383,7 @@ object MiraveloMembershipProcessApi {
 
       object Next {
         val endEventMembershipActivated: SequenceFlows<EndEventMembershipActivated>
-          get() = SequenceFlows(target = EndEventMembershipActivated, flows = listOf(Flows.FLOW_WELCOME_TO_ACTIVATED))
+          get() = SequenceFlows(target = EndEventMembershipActivated, flowId = ElementId("flow_welcomeToActivated"))
       }
     }
 
@@ -383,7 +400,7 @@ object MiraveloMembershipProcessApi {
 
       object Next {
         val serviceTaskSendConfirmationMail: SequenceFlows<ServiceTaskSendConfirmationMail>
-          get() = SequenceFlows(target = ServiceTaskSendConfirmationMail, flows = listOf(Flows.FLOW_SUB_START_TO_CONFIRMATION_MAIL))
+          get() = SequenceFlows(target = ServiceTaskSendConfirmationMail, flowId = ElementId("flow_subStartToConfirmationMail"))
       }
     }
 
@@ -401,16 +418,13 @@ object MiraveloMembershipProcessApi {
       override val next: Next = Next
 
       object Variables {
-        val MEMBERSHIP_ID: VariableName.Output = VariableName.Output(Names.MEMBERSHIP_ID)
-
-        object Names {
-          const val MEMBERSHIP_ID: String = "membershipId"
-        }
+        val MEMBERSHIP_ID: VariableName.Output =
+            VariableName.Output(ProcessVariables.MEMBERSHIP_ID)
       }
 
       object Next {
         val serviceTaskClaimMembership: SequenceFlows<ServiceTaskClaimMembership>
-          get() = SequenceFlows(target = ServiceTaskClaimMembership, flows = listOf(Flows.FLOW_START_TO_CLAIM))
+          get() = SequenceFlows(target = ServiceTaskClaimMembership, flowId = ElementId("flow_startToClaim"))
       }
     }
 
@@ -438,7 +452,7 @@ object MiraveloMembershipProcessApi {
           get() = AttachedBoundaryEvent(target = EventReminderDue)
 
         val serviceTaskSendWelcomeMail: SequenceFlows<ServiceTaskSendWelcomeMail>
-          get() = SequenceFlows(target = ServiceTaskSendWelcomeMail, flows = listOf(Flows.FLOW_SUB_PROCESS_TO_WELCOME))
+          get() = SequenceFlows(target = ServiceTaskSendWelcomeMail, flowId = ElementId("flow_subProcessToWelcome"))
       }
 
       object Start {
@@ -458,107 +472,8 @@ object MiraveloMembershipProcessApi {
 
       object Next {
         val endEventMembershipConfirmed: SequenceFlows<EndEventMembershipConfirmed>
-          get() = SequenceFlows(target = EndEventMembershipConfirmed, flows = listOf(Flows.FLOW_USER_TASK_TO_SUB_END))
+          get() = SequenceFlows(target = EndEventMembershipConfirmed, flowId = ElementId("flow_userTaskToSubEnd"))
       }
     }
-  }
-
-  /**
-   * Every sequence flow of the process, named after its id.
-   */
-  object Flows {
-    val FLOW_CLAIM_TO_GATEWAY: SequenceFlow<FlowNodes.GatewayHasEmptySpots> = SequenceFlow(
-      id = ElementId("flow_claimToGateway"),
-      target = FlowNodes.GatewayHasEmptySpots,
-    )
-
-    val FLOW_CONFIRMATION_MAIL_TO_USER_TASK:
-        SequenceFlow<FlowNodes.UserTaskConfirmMembership> = SequenceFlow(
-      id = ElementId("flow_confirmationMailToUserTask"),
-      target = FlowNodes.UserTaskConfirmMembership,
-    )
-
-    val FLOW_GATEWAY_TO_REVOKE: SequenceFlow<FlowNodes.ServiceTaskRevokeMembershipRequest> =
-        SequenceFlow(
-      id = ElementId("flow_gatewayToRevoke"),
-      target = FlowNodes.ServiceTaskRevokeMembershipRequest,
-    )
-
-    val FLOW_NO_SPOTS: SequenceFlow<FlowNodes.ServiceTaskSendRejectionMail> = SequenceFlow(
-      id = ElementId("flow_noSpots"),
-      name = "No",
-      isDefault = true,
-      target = FlowNodes.ServiceTaskSendRejectionMail,
-    )
-
-    val FLOW_REJECTED_TO_REVOKE: SequenceFlow<FlowNodes.GatewayRevokeReason> = SequenceFlow(
-      id = ElementId("flow_rejectedToRevoke"),
-      target = FlowNodes.GatewayRevokeReason,
-    )
-
-    val FLOW_REJECTION_TO_END: SequenceFlow<FlowNodes.EndEventMembershipRejected> =
-        SequenceFlow(
-      id = ElementId("flow_rejectionToEnd"),
-      target = FlowNodes.EndEventMembershipRejected,
-    )
-
-    val FLOW_REVOKE_TO_DECLINED: SequenceFlow<FlowNodes.EndEventMembershipDeclined> =
-        SequenceFlow(
-      id = ElementId("flow_revokeToDeclined"),
-      target = FlowNodes.EndEventMembershipDeclined,
-    )
-
-    val FLOW_RE_SEND_TO_END: SequenceFlow<FlowNodes.EndEventMailSentAgain> = SequenceFlow(
-      id = ElementId("flow_reSendToEnd"),
-      target = FlowNodes.EndEventMailSentAgain,
-    )
-
-    val FLOW_START_TO_CLAIM: SequenceFlow<FlowNodes.ServiceTaskClaimMembership> =
-        SequenceFlow(
-      id = ElementId("flow_startToClaim"),
-      target = FlowNodes.ServiceTaskClaimMembership,
-    )
-
-    val FLOW_SUB_PROCESS_TO_WELCOME: SequenceFlow<FlowNodes.ServiceTaskSendWelcomeMail> =
-        SequenceFlow(
-      id = ElementId("flow_subProcessToWelcome"),
-      target = FlowNodes.ServiceTaskSendWelcomeMail,
-    )
-
-    val FLOW_SUB_START_TO_CONFIRMATION_MAIL:
-        SequenceFlow<FlowNodes.ServiceTaskSendConfirmationMail> = SequenceFlow(
-      id = ElementId("flow_subStartToConfirmationMail"),
-      target = FlowNodes.ServiceTaskSendConfirmationMail,
-    )
-
-    val FLOW_TIMEOUT_TO_REVOKE: SequenceFlow<FlowNodes.GatewayRevokeReason> = SequenceFlow(
-      id = ElementId("flow_timeoutToRevoke"),
-      target = FlowNodes.GatewayRevokeReason,
-    )
-
-    val FLOW_TIMER_TO_RE_SEND: SequenceFlow<FlowNodes.ServiceTaskReSendConfirmationMail> =
-        SequenceFlow(
-      id = ElementId("flow_timerToReSend"),
-      target = FlowNodes.ServiceTaskReSendConfirmationMail,
-    )
-
-    val FLOW_USER_TASK_TO_SUB_END: SequenceFlow<FlowNodes.EndEventMembershipConfirmed> =
-        SequenceFlow(
-      id = ElementId("flow_userTaskToSubEnd"),
-      target = FlowNodes.EndEventMembershipConfirmed,
-    )
-
-    val FLOW_WELCOME_TO_ACTIVATED: SequenceFlow<FlowNodes.EndEventMembershipActivated> =
-        SequenceFlow(
-      id = ElementId("flow_welcomeToActivated"),
-      target = FlowNodes.EndEventMembershipActivated,
-    )
-
-    val FLOW_YES_SPOTS: SequenceFlow<FlowNodes.SubProcessConfirmMembership> = SequenceFlow(
-      id = ElementId("flow_yesSpots"),
-      name = "Yes",
-      conditionExpression = "=hasEmptySpots",
-      target = FlowNodes.SubProcessConfirmMembership,
-    )
   }
 }
