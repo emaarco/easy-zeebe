@@ -4,7 +4,7 @@
 package io.miragon.example.adapter.process
 
 import io.miragon.bpmn.runtime.AbstractFlowNode
-import io.miragon.bpmn.runtime.Attachment
+import io.miragon.bpmn.runtime.AttachedBoundaryEvent
 import io.miragon.bpmn.runtime.BoundaryEvent
 import io.miragon.bpmn.runtime.BpmnElementType
 import io.miragon.bpmn.runtime.BpmnEngine
@@ -14,13 +14,17 @@ import io.miragon.bpmn.runtime.ElementId
 import io.miragon.bpmn.runtime.Event
 import io.miragon.bpmn.runtime.FlowNode
 import io.miragon.bpmn.runtime.FlowScope
+import io.miragon.bpmn.runtime.HasJobType
+import io.miragon.bpmn.runtime.HasMessage
 import io.miragon.bpmn.runtime.HasSuccessors
 import io.miragon.bpmn.runtime.MessageName
 import io.miragon.bpmn.runtime.ProcessId
 import io.miragon.bpmn.runtime.SequenceFlow
+import io.miragon.bpmn.runtime.SequenceFlows
+import io.miragon.bpmn.runtime.SignalEvent
 import io.miragon.bpmn.runtime.SignalName
+import io.miragon.bpmn.runtime.TimerEvent
 import io.miragon.bpmn.runtime.TimerType
-import io.miragon.bpmn.runtime.Transition
 import io.miragon.bpmn.runtime.VariableName
 import kotlin.Boolean
 import kotlin.String
@@ -82,12 +86,12 @@ object MiraveloMembershipProcessApi {
       id = ElementId(EndEventMembershipActivated.ELEMENT_ID),
       elementType = BpmnElementType.END_EVENT,
       name = "Membership activated",
-    ), Event {
+    ), Event, SignalEvent {
       override val eventType: BpmnEventType = BpmnEventType.SIGNAL
 
       const val ELEMENT_ID: String = "endEvent_membershipActivated"
 
-      val SIGNAL: SignalName = Signals.MIRAVELO_MEMBERSHIP_ACTIVATED
+      override val signal: SignalName = Signals.MIRAVELO_MEMBERSHIP_ACTIVATED
     }
 
     object EndEventMembershipConfirmed : AbstractFlowNode(
@@ -140,12 +144,12 @@ object MiraveloMembershipProcessApi {
       elementType = BpmnElementType.BOUNDARY_EVENT,
       name = "Deadline passed",
     ), HasSuccessors<EventConfirmationDeadlinePassed.Next>,
-        BoundaryEvent<SubProcessConfirmMembership> {
+        BoundaryEvent<SubProcessConfirmMembership>, TimerEvent {
       override val eventType: BpmnEventType = BpmnEventType.TIMER
 
       const val ELEMENT_ID: String = "event_confirmationDeadlinePassed"
 
-      val TIMER: BpmnTimer = BpmnTimer(
+      override val timer: BpmnTimer = BpmnTimer(
         type = TimerType.DURATION,
         timerValue = "P3DT12H",
       )
@@ -155,12 +159,11 @@ object MiraveloMembershipProcessApi {
 
       override val isInterrupting: Boolean = true
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
-        val gatewayRevokeReason: Transition<GatewayRevokeReason>
-          get() = Transition(GatewayRevokeReason, ElementId("flow_timeoutToRevoke"))
+        val gatewayRevokeReason: SequenceFlows<GatewayRevokeReason>
+          get() = SequenceFlows(GatewayRevokeReason, flowId = ElementId("flow_timeoutToRevoke"))
       }
     }
 
@@ -168,24 +171,24 @@ object MiraveloMembershipProcessApi {
       id = ElementId(EventConfirmationRejected.ELEMENT_ID),
       elementType = BpmnElementType.BOUNDARY_EVENT,
       name = "Confirmation rejected",
-    ), HasSuccessors<EventConfirmationRejected.Next>, BoundaryEvent<SubProcessConfirmMembership> {
+    ), HasSuccessors<EventConfirmationRejected.Next>, BoundaryEvent<SubProcessConfirmMembership>,
+        HasMessage {
       override val eventType: BpmnEventType = BpmnEventType.MESSAGE
 
       const val ELEMENT_ID: String = "event_confirmationRejected"
 
-      val MESSAGE: MessageName = Messages.MIRAVELO_CONFIRMATION_REJECTED
+      override val message: MessageName = Messages.MIRAVELO_CONFIRMATION_REJECTED
 
       override val attachedTo: SubProcessConfirmMembership
         get() = SubProcessConfirmMembership
 
       override val isInterrupting: Boolean = true
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
-        val gatewayRevokeReason: Transition<GatewayRevokeReason>
-          get() = Transition(GatewayRevokeReason, ElementId("flow_rejectedToRevoke"))
+        val gatewayRevokeReason: SequenceFlows<GatewayRevokeReason>
+          get() = SequenceFlows(GatewayRevokeReason, flowId = ElementId("flow_rejectedToRevoke"))
       }
     }
 
@@ -193,12 +196,13 @@ object MiraveloMembershipProcessApi {
       id = ElementId(EventReminderDue.ELEMENT_ID),
       elementType = BpmnElementType.BOUNDARY_EVENT,
       name = "Reminder due",
-    ), HasSuccessors<EventReminderDue.Next>, BoundaryEvent<SubProcessConfirmMembership> {
+    ), HasSuccessors<EventReminderDue.Next>, BoundaryEvent<SubProcessConfirmMembership>,
+        TimerEvent {
       override val eventType: BpmnEventType = BpmnEventType.TIMER
 
       const val ELEMENT_ID: String = "event_reminderDue"
 
-      val TIMER: BpmnTimer = BpmnTimer(
+      override val timer: BpmnTimer = BpmnTimer(
         type = TimerType.CYCLE,
         timerValue = "R/P1D",
       )
@@ -208,12 +212,12 @@ object MiraveloMembershipProcessApi {
 
       override val isInterrupting: Boolean = false
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
-        val serviceTaskReSendConfirmationMail: Transition<ServiceTaskReSendConfirmationMail>
-          get() = Transition(ServiceTaskReSendConfirmationMail, ElementId("flow_timerToReSend"))
+        val serviceTaskReSendConfirmationMail:
+            SequenceFlows<ServiceTaskReSendConfirmationMail>
+          get() = SequenceFlows(ServiceTaskReSendConfirmationMail, flowId = ElementId("flow_timerToReSend"))
       }
     }
 
@@ -224,12 +228,11 @@ object MiraveloMembershipProcessApi {
     ), HasSuccessors<GatewayHasEmptySpots.Next> {
       const val ELEMENT_ID: String = "gateway_hasEmptySpots"
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
-        val serviceTaskSendRejectionMail: Transition<ServiceTaskSendRejectionMail>
-          get() = Transition(
+        val serviceTaskSendRejectionMail: SequenceFlows<ServiceTaskSendRejectionMail>
+          get() = SequenceFlows(
             ServiceTaskSendRejectionMail,
             SequenceFlow(
               id = ElementId("flow_noSpots"),
@@ -239,8 +242,8 @@ object MiraveloMembershipProcessApi {
             ),
           )
 
-        val subProcessConfirmMembership: Transition<SubProcessConfirmMembership>
-          get() = Transition(
+        val subProcessConfirmMembership: SequenceFlows<SubProcessConfirmMembership>
+          get() = SequenceFlows(
             SubProcessConfirmMembership,
             SequenceFlow(
               id = ElementId("flow_yesSpots"),
@@ -258,13 +261,12 @@ object MiraveloMembershipProcessApi {
     ), HasSuccessors<GatewayRevokeReason.Next> {
       const val ELEMENT_ID: String = "gateway_revokeReason"
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
         val serviceTaskRevokeMembershipRequest:
-            Transition<ServiceTaskRevokeMembershipRequest>
-          get() = Transition(ServiceTaskRevokeMembershipRequest, ElementId("flow_gatewayToRevoke"))
+            SequenceFlows<ServiceTaskRevokeMembershipRequest>
+          get() = SequenceFlows(ServiceTaskRevokeMembershipRequest, flowId = ElementId("flow_gatewayToRevoke"))
       }
     }
 
@@ -272,13 +274,12 @@ object MiraveloMembershipProcessApi {
       id = ElementId(ServiceTaskClaimMembership.ELEMENT_ID),
       elementType = BpmnElementType.SERVICE_TASK,
       name = "Claim Membership",
-    ), HasSuccessors<ServiceTaskClaimMembership.Next> {
+    ), HasSuccessors<ServiceTaskClaimMembership.Next>, HasJobType {
       const val ELEMENT_ID: String = "serviceTask_claimMembership"
 
-      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_CLAIM_MEMBERSHIP
+      override val jobType: String = ServiceTasks.MIRAVELO_CLAIM_MEMBERSHIP
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Variables {
         val HAS_EMPTY_SPOTS: VariableName.Output = VariableName.Output(Names.HAS_EMPTY_SPOTS)
@@ -289,11 +290,11 @@ object MiraveloMembershipProcessApi {
       }
 
       object Next {
-        val eventClaimCompensation: Attachment<EventClaimCompensation>
-          get() = Attachment(EventClaimCompensation)
+        val eventClaimCompensation: AttachedBoundaryEvent<EventClaimCompensation>
+          get() = AttachedBoundaryEvent(EventClaimCompensation)
 
-        val gatewayHasEmptySpots: Transition<GatewayHasEmptySpots>
-          get() = Transition(GatewayHasEmptySpots, ElementId("flow_claimToGateway"))
+        val gatewayHasEmptySpots: SequenceFlows<GatewayHasEmptySpots>
+          get() = SequenceFlows(GatewayHasEmptySpots, flowId = ElementId("flow_claimToGateway"))
       }
     }
 
@@ -301,17 +302,16 @@ object MiraveloMembershipProcessApi {
       id = ElementId(ServiceTaskReSendConfirmationMail.ELEMENT_ID),
       elementType = BpmnElementType.SERVICE_TASK,
       name = "Re-Send Confirmation Mail",
-    ), HasSuccessors<ServiceTaskReSendConfirmationMail.Next> {
+    ), HasSuccessors<ServiceTaskReSendConfirmationMail.Next>, HasJobType {
       const val ELEMENT_ID: String = "serviceTask_reSendConfirmationMail"
 
-      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_RE_SEND_CONFIRMATION_MAIL
+      override val jobType: String = ServiceTasks.MIRAVELO_RE_SEND_CONFIRMATION_MAIL
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
-        val endEventMailSentAgain: Transition<EndEventMailSentAgain>
-          get() = Transition(EndEventMailSentAgain, ElementId("flow_reSendToEnd"))
+        val endEventMailSentAgain: SequenceFlows<EndEventMailSentAgain>
+          get() = SequenceFlows(EndEventMailSentAgain, flowId = ElementId("flow_reSendToEnd"))
       }
     }
 
@@ -319,27 +319,26 @@ object MiraveloMembershipProcessApi {
       id = ElementId(ServiceTaskRevokeClaim.ELEMENT_ID),
       elementType = BpmnElementType.SERVICE_TASK,
       name = "Revoke Claim",
-    ) {
+    ), HasJobType {
       const val ELEMENT_ID: String = "serviceTask_revokeClaim"
 
-      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_REVOKE_CLAIM
+      override val jobType: String = ServiceTasks.MIRAVELO_REVOKE_CLAIM
     }
 
     object ServiceTaskRevokeMembershipRequest : AbstractFlowNode(
       id = ElementId(ServiceTaskRevokeMembershipRequest.ELEMENT_ID),
       elementType = BpmnElementType.SERVICE_TASK,
       name = "Revoke Membership Request",
-    ), HasSuccessors<ServiceTaskRevokeMembershipRequest.Next> {
+    ), HasSuccessors<ServiceTaskRevokeMembershipRequest.Next>, HasJobType {
       const val ELEMENT_ID: String = "serviceTask_revokeMembershipRequest"
 
-      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_REVOKE_MEMBERSHIP_REQUEST
+      override val jobType: String = ServiceTasks.MIRAVELO_REVOKE_MEMBERSHIP_REQUEST
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
-        val endEventMembershipDeclined: Transition<EndEventMembershipDeclined>
-          get() = Transition(EndEventMembershipDeclined, ElementId("flow_revokeToDeclined"))
+        val endEventMembershipDeclined: SequenceFlows<EndEventMembershipDeclined>
+          get() = SequenceFlows(EndEventMembershipDeclined, flowId = ElementId("flow_revokeToDeclined"))
       }
     }
 
@@ -347,17 +346,16 @@ object MiraveloMembershipProcessApi {
       id = ElementId(ServiceTaskSendConfirmationMail.ELEMENT_ID),
       elementType = BpmnElementType.SERVICE_TASK,
       name = "Send Confirmation Mail",
-    ), HasSuccessors<ServiceTaskSendConfirmationMail.Next> {
+    ), HasSuccessors<ServiceTaskSendConfirmationMail.Next>, HasJobType {
       const val ELEMENT_ID: String = "serviceTask_sendConfirmationMail"
 
-      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_SEND_CONFIRMATION_MAIL
+      override val jobType: String = ServiceTasks.MIRAVELO_SEND_CONFIRMATION_MAIL
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
-        val userTaskConfirmMembership: Transition<UserTaskConfirmMembership>
-          get() = Transition(UserTaskConfirmMembership, ElementId("flow_confirmationMailToUserTask"))
+        val userTaskConfirmMembership: SequenceFlows<UserTaskConfirmMembership>
+          get() = SequenceFlows(UserTaskConfirmMembership, flowId = ElementId("flow_confirmationMailToUserTask"))
       }
     }
 
@@ -365,17 +363,16 @@ object MiraveloMembershipProcessApi {
       id = ElementId(ServiceTaskSendRejectionMail.ELEMENT_ID),
       elementType = BpmnElementType.SERVICE_TASK,
       name = "Send Rejection Mail",
-    ), HasSuccessors<ServiceTaskSendRejectionMail.Next> {
+    ), HasSuccessors<ServiceTaskSendRejectionMail.Next>, HasJobType {
       const val ELEMENT_ID: String = "serviceTask_sendRejectionMail"
 
-      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_SEND_REJECTION_MAIL
+      override val jobType: String = ServiceTasks.MIRAVELO_SEND_REJECTION_MAIL
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
-        val endEventMembershipRejected: Transition<EndEventMembershipRejected>
-          get() = Transition(EndEventMembershipRejected, ElementId("flow_rejectionToEnd"))
+        val endEventMembershipRejected: SequenceFlows<EndEventMembershipRejected>
+          get() = SequenceFlows(EndEventMembershipRejected, flowId = ElementId("flow_rejectionToEnd"))
       }
     }
 
@@ -383,17 +380,16 @@ object MiraveloMembershipProcessApi {
       id = ElementId(ServiceTaskSendWelcomeMail.ELEMENT_ID),
       elementType = BpmnElementType.SERVICE_TASK,
       name = "Send Welcome Mail",
-    ), HasSuccessors<ServiceTaskSendWelcomeMail.Next> {
+    ), HasSuccessors<ServiceTaskSendWelcomeMail.Next>, HasJobType {
       const val ELEMENT_ID: String = "serviceTask_sendWelcomeMail"
 
-      const val JOB_TYPE: String = ServiceTasks.MIRAVELO_SEND_WELCOME_MAIL
+      override val jobType: String = ServiceTasks.MIRAVELO_SEND_WELCOME_MAIL
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
-        val endEventMembershipActivated: Transition<EndEventMembershipActivated>
-          get() = Transition(EndEventMembershipActivated, ElementId("flow_welcomeToActivated"))
+        val endEventMembershipActivated: SequenceFlows<EndEventMembershipActivated>
+          get() = SequenceFlows(EndEventMembershipActivated, flowId = ElementId("flow_welcomeToActivated"))
       }
     }
 
@@ -406,12 +402,11 @@ object MiraveloMembershipProcessApi {
 
       const val ELEMENT_ID: String = "startEvent_confirmationRequired"
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
-        val serviceTaskSendConfirmationMail: Transition<ServiceTaskSendConfirmationMail>
-          get() = Transition(ServiceTaskSendConfirmationMail, ElementId("flow_subStartToConfirmationMail"))
+        val serviceTaskSendConfirmationMail: SequenceFlows<ServiceTaskSendConfirmationMail>
+          get() = SequenceFlows(ServiceTaskSendConfirmationMail, flowId = ElementId("flow_subStartToConfirmationMail"))
       }
     }
 
@@ -419,15 +414,14 @@ object MiraveloMembershipProcessApi {
       id = ElementId(StartEventMembershipRequested.ELEMENT_ID),
       elementType = BpmnElementType.START_EVENT,
       name = "Membership requested",
-    ), HasSuccessors<StartEventMembershipRequested.Next>, Event {
+    ), HasSuccessors<StartEventMembershipRequested.Next>, Event, HasMessage {
       override val eventType: BpmnEventType = BpmnEventType.MESSAGE
 
       const val ELEMENT_ID: String = "startEvent_membershipRequested"
 
-      val MESSAGE: MessageName = Messages.MIRAVELO_MEMBERSHIP_REQUESTED
+      override val message: MessageName = Messages.MIRAVELO_MEMBERSHIP_REQUESTED
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Variables {
         val MEMBERSHIP_ID: VariableName.Output = VariableName.Output(Names.MEMBERSHIP_ID)
@@ -438,8 +432,8 @@ object MiraveloMembershipProcessApi {
       }
 
       object Next {
-        val serviceTaskClaimMembership: Transition<ServiceTaskClaimMembership>
-          get() = Transition(ServiceTaskClaimMembership, ElementId("flow_startToClaim"))
+        val serviceTaskClaimMembership: SequenceFlows<ServiceTaskClaimMembership>
+          get() = SequenceFlows(ServiceTaskClaimMembership, flowId = ElementId("flow_startToClaim"))
       }
     }
 
@@ -451,24 +445,23 @@ object MiraveloMembershipProcessApi {
         FlowScope<SubProcessConfirmMembership.Start> {
       const val ELEMENT_ID: String = "subProcess_confirmMembership"
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
-      override val startEvents: Start
-        get() = Start
+      override val startEvents: Start = Start
 
       object Next {
-        val eventConfirmationDeadlinePassed: Attachment<EventConfirmationDeadlinePassed>
-          get() = Attachment(EventConfirmationDeadlinePassed)
+        val eventConfirmationDeadlinePassed:
+            AttachedBoundaryEvent<EventConfirmationDeadlinePassed>
+          get() = AttachedBoundaryEvent(EventConfirmationDeadlinePassed)
 
-        val eventConfirmationRejected: Attachment<EventConfirmationRejected>
-          get() = Attachment(EventConfirmationRejected)
+        val eventConfirmationRejected: AttachedBoundaryEvent<EventConfirmationRejected>
+          get() = AttachedBoundaryEvent(EventConfirmationRejected)
 
-        val eventReminderDue: Attachment<EventReminderDue>
-          get() = Attachment(EventReminderDue)
+        val eventReminderDue: AttachedBoundaryEvent<EventReminderDue>
+          get() = AttachedBoundaryEvent(EventReminderDue)
 
-        val serviceTaskSendWelcomeMail: Transition<ServiceTaskSendWelcomeMail>
-          get() = Transition(ServiceTaskSendWelcomeMail, ElementId("flow_subProcessToWelcome"))
+        val serviceTaskSendWelcomeMail: SequenceFlows<ServiceTaskSendWelcomeMail>
+          get() = SequenceFlows(ServiceTaskSendWelcomeMail, flowId = ElementId("flow_subProcessToWelcome"))
       }
 
       object Start {
@@ -484,12 +477,11 @@ object MiraveloMembershipProcessApi {
     ), HasSuccessors<UserTaskConfirmMembership.Next> {
       const val ELEMENT_ID: String = "userTask_confirmMembership"
 
-      override val next: Next
-        get() = Next
+      override val next: Next = Next
 
       object Next {
-        val endEventMembershipConfirmed: Transition<EndEventMembershipConfirmed>
-          get() = Transition(EndEventMembershipConfirmed, ElementId("flow_userTaskToSubEnd"))
+        val endEventMembershipConfirmed: SequenceFlows<EndEventMembershipConfirmed>
+          get() = SequenceFlows(EndEventMembershipConfirmed, flowId = ElementId("flow_userTaskToSubEnd"))
       }
     }
   }
