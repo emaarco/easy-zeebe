@@ -15,6 +15,11 @@ updates:
     patterns:
       - "*"
     multi-ecosystem-group: "backend"
+    # Konsist 0.17.3 (latest) cannot parse sources with a newer Kotlin compiler
+    ignore:
+      - dependency-name: "org.jetbrains.kotlin*"
+        versions:
+          - "> 2.4.10"
 
   - package-ecosystem: "docker-compose"
     directory: "/stack"
