@@ -12,12 +12,12 @@
     "format:check": "cd .. && prettier --check --ignore-path tools/.prettierignore \"**/*.md\""
   },
   "devDependencies": {
-    "@miragon/bpmnlint-plugin-rules": "0.10.0",
+    "@miragon/bpmnlint-plugin-rules": "0.10.1",
     "bpmn-auto-layout": "1.3.0",
-    "bpmnlint": "11.13.0",
-    "bpmnlint-plugin-camunda-compat": "2.60.3",
+    "bpmnlint": "11.14.0",
+    "bpmnlint-plugin-camunda-compat": "2.61.0",
     "bpmnlint-plugin-local": "file:bpmnlint-plugin-local",
-    "prettier": "3.9.6",
+    "prettier": "3.9.9",
     "zeebe-bpmn-moddle": "2.0.0"
   }
 }
