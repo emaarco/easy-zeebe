@@ -17,7 +17,7 @@ object Messages {
   val MIRAVELO_MEMBERSHIP_REQUESTED: MessageName =
       MessageName("miravelo.membershipRequested")
 
-  val entries: List<MessageName> = listOf(
+  val all: List<MessageName> = listOf(
     MIRAVELO_CONFIRMATION_REJECTED,
     MIRAVELO_MEMBERSHIP_REQUESTED,
   )

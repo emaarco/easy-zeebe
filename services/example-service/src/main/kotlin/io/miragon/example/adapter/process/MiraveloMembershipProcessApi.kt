@@ -17,8 +17,10 @@ import io.miragon.bpmn.runtime.FlowScope
 import io.miragon.bpmn.runtime.HasJobType
 import io.miragon.bpmn.runtime.HasMessage
 import io.miragon.bpmn.runtime.HasSuccessors
+import io.miragon.bpmn.runtime.HasVariables
 import io.miragon.bpmn.runtime.MessageName
 import io.miragon.bpmn.runtime.ProcessId
+import io.miragon.bpmn.runtime.RegisteredVariableDefinitions
 import io.miragon.bpmn.runtime.SequenceFlows
 import io.miragon.bpmn.runtime.SignalEvent
 import io.miragon.bpmn.runtime.SignalName
@@ -39,7 +41,7 @@ object MiraveloMembershipProcessApi {
    * Typed navigation over the process flow: one nested object per BPMN element.
    */
   object FlowNodes {
-    val entries: List<FlowNode> = listOf(
+    val all: List<FlowNode> = listOf(
       EndEventMailSentAgain,
       EndEventMembershipActivated,
       EndEventMembershipConfirmed,
@@ -272,16 +274,17 @@ object MiraveloMembershipProcessApi {
       id = ElementId(ServiceTaskClaimMembership.ELEMENT_ID),
       elementType = BpmnElementType.SERVICE_TASK,
       name = "Claim Membership",
-    ), HasSuccessors<ServiceTaskClaimMembership.Next>, HasJobType {
+    ), HasSuccessors<ServiceTaskClaimMembership.Next>, HasJobType, HasVariables {
       const val ELEMENT_ID: String = "serviceTask_claimMembership"
 
       override val jobType: String = ServiceTasks.MIRAVELO_CLAIM_MEMBERSHIP
 
+      override val variables: Variables = Variables
+
       override val next: Next = Next
 
-      object Variables {
-        val HAS_EMPTY_SPOTS: VariableName.Output =
-            VariableName.Output(ProcessVariables.HAS_EMPTY_SPOTS)
+      object Variables : RegisteredVariableDefinitions() {
+        val HAS_EMPTY_SPOTS: VariableName.Output = output(ProcessVariables.HAS_EMPTY_SPOTS)
       }
 
       object Next {
@@ -430,18 +433,19 @@ object MiraveloMembershipProcessApi {
       id = ElementId(StartEventMembershipRequested.ELEMENT_ID),
       elementType = BpmnElementType.START_EVENT,
       name = "Membership requested",
-    ), HasSuccessors<StartEventMembershipRequested.Next>, Event, HasMessage {
+    ), HasSuccessors<StartEventMembershipRequested.Next>, Event, HasMessage, HasVariables {
       override val eventType: BpmnEventType = BpmnEventType.MESSAGE
 
       const val ELEMENT_ID: String = "startEvent_membershipRequested"
 
       override val message: MessageName = Messages.MIRAVELO_MEMBERSHIP_REQUESTED
 
+      override val variables: Variables = Variables
+
       override val next: Next = Next
 
-      object Variables {
-        val MEMBERSHIP_ID: VariableName.Output =
-            VariableName.Output(ProcessVariables.MEMBERSHIP_ID)
+      object Variables : RegisteredVariableDefinitions() {
+        val MEMBERSHIP_ID: VariableName.Output = output(ProcessVariables.MEMBERSHIP_ID)
       }
 
       object Next {

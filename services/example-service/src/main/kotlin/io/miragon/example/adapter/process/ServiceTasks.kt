@@ -26,7 +26,7 @@ object ServiceTasks {
 
   const val MIRAVELO_SEND_WELCOME_MAIL: String = "miravelo.sendWelcomeMail"
 
-  val entries: List<String> = listOf(
+  val all: List<String> = listOf(
     MIRAVELO_CLAIM_MEMBERSHIP,
     MIRAVELO_RE_SEND_CONFIRMATION_MAIL,
     MIRAVELO_REVOKE_CLAIM,

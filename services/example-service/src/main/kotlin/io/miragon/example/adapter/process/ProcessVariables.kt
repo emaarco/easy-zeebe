@@ -16,7 +16,7 @@ object ProcessVariables {
 
   const val MEMBERSHIP_ID: String = "membershipId"
 
-  val entries: List<String> = listOf(
+  val all: List<String> = listOf(
     HAS_EMPTY_SPOTS,
     MEMBERSHIP_ID,
   )
