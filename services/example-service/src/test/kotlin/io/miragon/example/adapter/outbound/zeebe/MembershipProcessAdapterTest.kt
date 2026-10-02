@@ -11,7 +11,9 @@ import io.camunda.client.api.search.response.SearchResponse
 import io.camunda.client.api.search.response.UserTask
 import io.miragon.bpmn.runtime.VariableName
 import io.miragon.common.zeebe.engine.ProcessEngineApi
+import io.miragon.example.adapter.process.Messages
 import io.miragon.example.adapter.process.MiraveloMembershipProcessApi
+import io.miragon.example.adapter.process.ProcessVariables
 import io.miragon.example.domain.MembershipId
 import io.mockk.Runs
 import io.mockk.confirmVerified
@@ -38,7 +40,7 @@ class MembershipProcessAdapterTest {
 
         // Given
         val membershipId = MembershipId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"))
-        val expectedVariables: Map<VariableName, Any> = mapOf(MiraveloMembershipProcessApi.Variables.StartEventMembershipRequested.MEMBERSHIP_ID to membershipId.value.toString())
+        val expectedVariables: Map<VariableName, Any> = mapOf(MiraveloMembershipProcessApi.FlowNodes.StartEventMembershipRequested.Variables.MEMBERSHIP_ID to membershipId.value.toString())
         every { engineApi.sendMessage(any(), any(), any()) } just Runs
 
         // When
@@ -47,7 +49,7 @@ class MembershipProcessAdapterTest {
         // Then
         verify {
             engineApi.sendMessage(
-                messageName = MiraveloMembershipProcessApi.Messages.MIRAVELO_MEMBERSHIP_REQUESTED,
+                messageName = Messages.MIRAVELO_MEMBERSHIP_REQUESTED,
                 correlationId = membershipId.value.toString(),
                 variables = expectedVariables,
             )
@@ -85,10 +87,10 @@ class MembershipProcessAdapterTest {
 
         // Then: the adapter applied the expected filter and completed the task it found
         verify { capturedFilter.state(UserTaskState.CREATED) }
-        verify { capturedFilter.elementId(MiraveloMembershipProcessApi.Elements.USER_TASK_CONFIRM_MEMBERSHIP.value) }
+        verify { capturedFilter.elementId(MiraveloMembershipProcessApi.FlowNodes.UserTaskConfirmMembership.id.value) }
         verify {
             capturedFilter.processInstanceVariables(
-                mapOf(MiraveloMembershipProcessApi.Variables.StartEventMembershipRequested.MEMBERSHIP_ID.value to "\"${membershipId.value}\"")
+                mapOf(ProcessVariables.MEMBERSHIP_ID to "\"${membershipId.value}\"")
             )
         }
         verify { camundaClient.newCompleteUserTaskCommand(expectedUserTaskKey) }
@@ -108,7 +110,7 @@ class MembershipProcessAdapterTest {
         // Then: message + correlation key are pinned; variables are not part of the contract
         verify {
             engineApi.sendMessage(
-                messageName = MiraveloMembershipProcessApi.Messages.MIRAVELO_CONFIRMATION_REJECTED,
+                messageName = Messages.MIRAVELO_CONFIRMATION_REJECTED,
                 correlationId = membershipId.value.toString(),
                 variables = any(),
             )

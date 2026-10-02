@@ -6,10 +6,17 @@ import io.camunda.process.test.api.CamundaAssert
 import io.camunda.process.test.api.CamundaProcessTestContext
 import io.camunda.process.test.api.CamundaSpringProcessTest
 import io.camunda.process.test.api.assertions.ProcessInstanceSelectors
+import io.miragon.bpmn.runtime.path.ProcessPath
+import io.miragon.bpmn.runtime.path.enter
+import io.miragon.bpmn.runtime.path.inside
+import io.miragon.bpmn.runtime.path.interruptedBy
+import io.miragon.bpmn.runtime.path.onto
+import io.miragon.bpmn.runtime.path.then
 import io.miragon.common.test.assertions.hasCompletedElements
+import io.miragon.common.test.assertions.hasCompletedElementsInOrder
 import io.miragon.common.test.config.TestProcessEngineConfiguration
 import io.miragon.example.adapter.outbound.zeebe.MembershipProcessAdapter
-import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.Elements
+import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.FlowNodes
 import io.miragon.example.application.port.inbound.ClaimMembershipUseCase
 import io.miragon.example.application.port.inbound.ReSendConfirmationMailUseCase
 import io.miragon.example.application.port.inbound.RevokeClaimUseCase
@@ -98,19 +105,26 @@ class MiraveloMembershipProcessTest {
         processPort.registerMembership(MembershipId(membershipId))
         val instanceKey = awaitProcessInstance(membershipId)
         awaitUserTaskCreated(instanceKey)
-        processTestContext.completeUserTask(Elements.USER_TASK_CONFIRM_MEMBERSHIP.value)
+        processTestContext.completeUserTask(FlowNodes.UserTaskConfirmMembership.id.value)
 
         // then - process completes, welcome mail is sent, activation signal thrown
+        val expectedPath = ProcessPath.from(FlowNodes.StartEventMembershipRequested)
+            .then { it.serviceTaskClaimMembership }
+            .then { it.gatewayHasEmptySpots }
+            .onto { it.subProcessConfirmMembership }
+            .inside {
+                enter { it.startEventConfirmationRequired }
+                    .then { it.serviceTaskSendConfirmationMail }
+                    .then { it.userTaskConfirmMembership }
+                    .then { it.endEventMembershipConfirmed }
+            }
+            .then { it.serviceTaskSendWelcomeMail }
+            .then { it.endEventMembershipActivated }
+
         val instance = ProcessInstanceSelectors.byKey(instanceKey)
         CamundaAssert.assertThatProcessInstance(instance).isCompleted()
         CamundaAssert.assertThatProcessInstance(instance)
-            .hasCompletedElements(
-                Elements.SERVICE_TASK_CLAIM_MEMBERSHIP,
-                Elements.SERVICE_TASK_SEND_CONFIRMATION_MAIL,
-                Elements.USER_TASK_CONFIRM_MEMBERSHIP,
-                Elements.SERVICE_TASK_SEND_WELCOME_MAIL,
-                Elements.END_EVENT_MEMBERSHIP_ACTIVATED,
-            )
+            .hasCompletedElementsInOrder(expectedPath)
         verify { claimMembershipUseCase.claim(MembershipId(membershipId)) }
         verify { sendConfirmationMailUseCase.sendConfirmationMail(MembershipId(membershipId)) }
         verify { sendWelcomeMailUseCase.sendWelcomeMail(MembershipId(membershipId)) }
@@ -139,15 +153,16 @@ class MiraveloMembershipProcessTest {
         val instanceKey = awaitProcessInstance(membershipId)
 
         // then - gateway routed via no-spots, rejection mail sent, process ends rejected
+        val expectedPath = ProcessPath.from(FlowNodes.StartEventMembershipRequested)
+            .then { it.serviceTaskClaimMembership }
+            .then { it.gatewayHasEmptySpots }
+            .then { it.serviceTaskSendRejectionMail }
+            .then { it.endEventMembershipRejected }
+
         val instance = ProcessInstanceSelectors.byKey(instanceKey)
         CamundaAssert.assertThatProcessInstance(instance).isCompleted()
         CamundaAssert.assertThatProcessInstance(instance)
-            .hasCompletedElements(
-                Elements.SERVICE_TASK_CLAIM_MEMBERSHIP,
-                Elements.GATEWAY_HAS_EMPTY_SPOTS,
-                Elements.SERVICE_TASK_SEND_REJECTION_MAIL,
-                Elements.END_EVENT_MEMBERSHIP_REJECTED,
-            )
+            .hasCompletedElementsInOrder(expectedPath)
         verify { claimMembershipUseCase.claim(MembershipId(membershipId)) }
         verify { sendRejectionMailUseCase.sendRejectionMail(MembershipId(membershipId)) }
         verify { sendConfirmationMailUseCase wasNot Called }
@@ -177,17 +192,17 @@ class MiraveloMembershipProcessTest {
         processPort.rejectConfirmation(MembershipId(membershipId))
 
         // then - revoke request + compensation revoke claim run, process ends declined
+        val expectedPath = pathUntilConfirmationMailSent()
+            .interruptedBy(FlowNodes.SubProcessConfirmMembership) { it.eventConfirmationRejected }
+            .then { it.gatewayRevokeReason }
+            .then { it.serviceTaskRevokeMembershipRequest }
+            .then { it.endEventMembershipDeclined }
+
         val instance = ProcessInstanceSelectors.byKey(instanceKey)
         CamundaAssert.assertThatProcessInstance(instance).isCompleted()
         CamundaAssert.assertThatProcessInstance(instance)
-            .hasCompletedElements(
-                Elements.SERVICE_TASK_CLAIM_MEMBERSHIP,
-                Elements.SERVICE_TASK_SEND_CONFIRMATION_MAIL,
-                Elements.EVENT_CONFIRMATION_REJECTED,
-                Elements.SERVICE_TASK_REVOKE_MEMBERSHIP_REQUEST,
-                Elements.SERVICE_TASK_REVOKE_CLAIM,
-                Elements.END_EVENT_MEMBERSHIP_DECLINED,
-            )
+            .hasCompletedElementsInOrder(expectedPath)
+            .hasCompletedElements(FlowNodes.ServiceTaskRevokeClaim.id)
         verify { claimMembershipUseCase.claim(MembershipId(membershipId)) }
         verify { sendConfirmationMailUseCase.sendConfirmationMail(MembershipId(membershipId)) }
         verify { revokeMembershipRequestUseCase.revokeMembershipRequest(MembershipId(membershipId)) }
@@ -217,15 +232,17 @@ class MiraveloMembershipProcessTest {
         processTestContext.increaseTime(Duration.ofDays(3).plusHours(13))
 
         // then - revoke request + compensation run, process ends declined
+        val expectedPath = pathUntilConfirmationMailSent()
+            .interruptedBy(FlowNodes.SubProcessConfirmMembership) { it.eventConfirmationDeadlinePassed }
+            .then { it.gatewayRevokeReason }
+            .then { it.serviceTaskRevokeMembershipRequest }
+            .then { it.endEventMembershipDeclined }
+
         val instance = ProcessInstanceSelectors.byKey(instanceKey)
         CamundaAssert.assertThatProcessInstance(instance).isCompleted()
         CamundaAssert.assertThatProcessInstance(instance)
-            .hasCompletedElements(
-                Elements.EVENT_CONFIRMATION_DEADLINE_PASSED,
-                Elements.SERVICE_TASK_REVOKE_MEMBERSHIP_REQUEST,
-                Elements.SERVICE_TASK_REVOKE_CLAIM,
-                Elements.END_EVENT_MEMBERSHIP_DECLINED,
-            )
+            .hasCompletedElementsInOrder(expectedPath)
+            .hasCompletedElements(FlowNodes.ServiceTaskRevokeClaim.id)
         verify { revokeMembershipRequestUseCase.revokeMembershipRequest(MembershipId(membershipId)) }
         verify { revokeClaimUseCase.revokeClaim(MembershipId(membershipId)) }
         verify { sendWelcomeMailUseCase wasNot Called }
@@ -244,17 +261,25 @@ class MiraveloMembershipProcessTest {
         processTestContext.increaseTime(Duration.ofDays(1).plusHours(1))
 
         // then - re-send mail worker ran; user task still active (no abort, no compensation)
+        val expectedPath = ProcessPath.from(FlowNodes.EventReminderDue)
+            .then { it.serviceTaskReSendConfirmationMail }
+            .then { it.endEventMailSentAgain }
+
         val instance = ProcessInstanceSelectors.byKey(instanceKey)
         CamundaAssert.assertThatProcessInstance(instance)
-            .hasCompletedElements(
-                Elements.SERVICE_TASK_RE_SEND_CONFIRMATION_MAIL,
-                Elements.END_EVENT_MAIL_SENT_AGAIN,
-            )
+            .hasCompletedElementsInOrder(expectedPath)
         CamundaAssert.assertThatProcessInstance(instance).isActive()
         verify { reSendConfirmationMailUseCase.reSendConfirmationMail(MembershipId(membershipId)) }
         verify { revokeMembershipRequestUseCase wasNot Called }
         verify { revokeClaimUseCase wasNot Called }
     }
+
+    private fun pathUntilConfirmationMailSent() = ProcessPath.from(FlowNodes.StartEventMembershipRequested)
+        .then { it.serviceTaskClaimMembership }
+        .then { it.gatewayHasEmptySpots }
+        .onto { it.subProcessConfirmMembership }
+        .enter { it.startEventConfirmationRequired }
+        .then { it.serviceTaskSendConfirmationMail }
 
     private fun awaitProcessInstance(membershipId: UUID): Long {
         var instanceKey: Long = 0
@@ -283,7 +308,7 @@ class MiraveloMembershipProcessTest {
                 val tasks = camundaClient.newUserTaskSearchRequest()
                     .filter { filter ->
                         filter.processInstanceKey(processInstanceKey)
-                        filter.elementId(Elements.USER_TASK_CONFIRM_MEMBERSHIP.value)
+                        filter.elementId(FlowNodes.UserTaskConfirmMembership.id.value)
                     }
                     .send()
                     .join()

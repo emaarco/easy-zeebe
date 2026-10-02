@@ -18,6 +18,9 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    maven("https://central.sonatype.com/repository/maven-snapshots/") {
+        content { includeGroupByRegex("io\\.miragon.*") }
+    }
 }
 
 dependencies {

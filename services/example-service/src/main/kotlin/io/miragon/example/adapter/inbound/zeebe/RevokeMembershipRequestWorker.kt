@@ -2,7 +2,8 @@ package io.miragon.example.adapter.inbound.zeebe
 
 import io.camunda.client.annotation.JobWorker
 import io.camunda.client.annotation.Variable
-import io.miragon.example.adapter.process.MiraveloMembershipProcessApi.ServiceTasks
+import io.miragon.example.adapter.process.ProcessVariables
+import io.miragon.example.adapter.process.ServiceTasks
 import io.miragon.example.application.port.inbound.RevokeMembershipRequestUseCase
 import io.miragon.example.domain.MembershipId
 import mu.KotlinLogging
@@ -17,7 +18,7 @@ class RevokeMembershipRequestWorker(
     private val log = KotlinLogging.logger {}
 
     @JobWorker(type = ServiceTasks.MIRAVELO_REVOKE_MEMBERSHIP_REQUEST)
-    fun handle(@Variable membershipId: UUID) {
+    fun handle(@Variable(name = ProcessVariables.MEMBERSHIP_ID) membershipId: UUID) {
         log.debug { "Received job to revoke membership request for membershipId: $membershipId" }
         useCase.revokeMembershipRequest(MembershipId(membershipId))
     }
