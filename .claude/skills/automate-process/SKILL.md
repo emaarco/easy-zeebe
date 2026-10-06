@@ -28,12 +28,15 @@ The adapter and worker files reference these interfaces so the hexagonal wiring 
 
 ## IMPORTANT
 
-**All string constants must come from the ProcessApi — never use raw string literals.**
+**All string constants must come from the generated API (the ProcessApi and the shared files next to it) — never use
+raw string literals.**
 
-- Worker `@JobWorker(type = ...)` → `ProcessApi.TaskTypes.CONSTANT`
+- Worker `@JobWorker(type = ...)` → `ServiceTasks.CONSTANT`
 - Adapter `startProcess(processId = ...)` → `ProcessApi.PROCESS_ID`
-- Adapter `sendMessage(messageName = ...)` → `ProcessApi.Messages.CONSTANT`
-- Variable keys → `ProcessApi.Variables.CONSTANT` where defined
+- Adapter `sendMessage(messageName = ...)` → `Messages.CONSTANT`
+- Variable names in workers (`@Variable(name = ...)`, returned maps) → `ProcessVariables.CONSTANT`
+- Variable keys passed to `engineApi.startProcess` / `sendMessage` → the typed
+  `ProcessApi.FlowNodes.<Node>.Variables.CONSTANT`
 
 ## Instructions
 
@@ -52,8 +55,9 @@ If he disagrees to perform the `review` agent, continue with step 1.
 
 Determine where the process constants come from based on `$ARGUMENTS`:
 
-- **ProcessApi file (`.kt`)**: read it directly. Extract: package name, object name, `PROCESS_ID`, all `TaskTypes.*`,
-  `Messages.*`, `Signals.*` (if present), and `Variables.*` constants.
+- **ProcessApi file (`.kt`)**: read it directly. Extract: package name, object name, `PROCESS_ID` and the `FlowNodes`.
+  Then read the shared files generated in the same package: `ServiceTasks`, `Messages`, `Signals` (if present) and
+  `ProcessVariables`.
 - **BPMN file (`.bpmn`)**: search the same service module for a `*ProcessApi.kt` file (Glob
   `**/adapter/process/*ProcessApi.kt`). If found, read it as above. If not found, ask the user whether to continue
   without type-safe constants.
@@ -78,7 +82,7 @@ Derive the base package from the ProcessApi package. Example:
 
 Before generating any port or adapter code, scan the domain package (`<base>.domain`) for existing value objects.
 
-For each `Variables.*` constant in the ProcessApi:
+For each `ProcessVariables.*` constant:
 
 - Derive a candidate domain type name by converting the constant to PascalCase
   (e.g. `NEWSLETTER_ID` → `NewsletterId`, `SUBSCRIPTION_ID` → `SubscriptionId`)
@@ -91,7 +95,7 @@ with a secondary `String` constructor when the primary wraps `UUID`) **before** 
 
 ### Step 3 – Generate inbound port interfaces (use cases)
 
-For each `TaskTypes.*` constant, generate a use-case interface. Name convention: derive a meaningful interface name from
+For each `ServiceTasks.*` constant, generate a use-case interface. Name convention: derive a meaningful interface name from
 the task type constant (e.g. `NEWSLETTER_ABORT_REGISTRATION` → `AbortSubscriptionUseCase`).
 
 Generated structure:

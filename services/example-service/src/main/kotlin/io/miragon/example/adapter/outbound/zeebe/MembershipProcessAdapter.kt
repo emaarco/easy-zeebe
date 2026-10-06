@@ -3,7 +3,9 @@ package io.miragon.example.adapter.outbound.zeebe
 import io.camunda.client.CamundaClient
 import io.camunda.client.api.search.enums.UserTaskState
 import io.miragon.common.zeebe.engine.ProcessEngineApi
+import io.miragon.example.adapter.process.Messages
 import io.miragon.example.adapter.process.MiraveloMembershipProcessApi
+import io.miragon.example.adapter.process.ProcessVariables
 import io.miragon.example.application.port.outbound.MembershipProcess
 import io.miragon.example.domain.MembershipId
 import org.springframework.stereotype.Component
@@ -16,9 +18,9 @@ class MembershipProcessAdapter(
 
     override fun registerMembership(id: MembershipId) {
         engineApi.sendMessage(
-            messageName = MiraveloMembershipProcessApi.Messages.MIRAVELO_MEMBERSHIP_REQUESTED,
+            messageName = Messages.MIRAVELO_MEMBERSHIP_REQUESTED,
             correlationId = id.value.toString(),
-            variables = mapOf(MiraveloMembershipProcessApi.Variables.StartEventMembershipRequested.MEMBERSHIP_ID to id.value.toString()),
+            variables = mapOf(MiraveloMembershipProcessApi.FlowNodes.StartEventMembershipRequested.Variables.MEMBERSHIP_ID to id.value.toString()),
         )
     }
 
@@ -29,7 +31,7 @@ class MembershipProcessAdapter(
 
     override fun rejectConfirmation(id: MembershipId) {
         engineApi.sendMessage(
-            messageName = MiraveloMembershipProcessApi.Messages.MIRAVELO_CONFIRMATION_REJECTED,
+            messageName = Messages.MIRAVELO_CONFIRMATION_REJECTED,
             correlationId = id.value.toString(),
         )
     }
@@ -38,9 +40,9 @@ class MembershipProcessAdapter(
         return camundaClient.newUserTaskSearchRequest()
             .filter { filter ->
                 filter.state(UserTaskState.CREATED)
-                filter.elementId(MiraveloMembershipProcessApi.Elements.USER_TASK_CONFIRM_MEMBERSHIP.value)
+                filter.elementId(MiraveloMembershipProcessApi.FlowNodes.UserTaskConfirmMembership.id.value)
                 filter.processInstanceVariables(
-                    mapOf(MiraveloMembershipProcessApi.Variables.StartEventMembershipRequested.MEMBERSHIP_ID.value to "\"${id.value}\"")
+                    mapOf(ProcessVariables.MEMBERSHIP_ID to "\"${id.value}\"")
                 )
             }
             .send()

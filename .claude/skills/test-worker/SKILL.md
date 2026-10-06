@@ -58,7 +58,7 @@ fun `should return output variable when job is received`() {
     // Then
     verify(exactly = 1) { useCase.method(DomainType(variableId)) }
     confirmVerified(useCase)
-    assertThat(result).containsExactly(entry(Variables.CONSTANT, expectedValue))
+    assertThat(result).containsExactly(entry(ProcessVariables.CONSTANT, expectedValue))
 }
 ```
 

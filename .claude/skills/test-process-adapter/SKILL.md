@@ -46,7 +46,7 @@ class YourProcessAdapterTest {
         // when: the adapter sends the message
         underTest.sendSomething(id)
         // then: engine called with the correct messageName and correlationId
-        verify { engineApi.sendMessage(ProcessApi.Messages.CONSTANT, id.value.toString(), emptyMap()) }
+        verify { engineApi.sendMessage(Messages.CONSTANT, id.value.toString(), emptyMap()) }
         confirmVerified(engineApi)
     }
 }
@@ -62,7 +62,8 @@ See `references/process-adapter-test-template.kt` for the full annotated example
 - Use `org.assertj.core.api.Assertions.assertThat` for return-value assertions
 - Use `confirmVerified(engineApi)` at the end of every test to catch unexpected calls
 - Import the exact ProcessApi class used in the adapter under test
-- All string constants (processId, messageName, variable keys) must come from the ProcessApi object — no raw literals
+- All string constants (processId, messageName, variable keys) must come from the generated API (the ProcessApi and the
+  shared `Messages` file next to it) — no raw literals
 
 ## Instructions
 
@@ -74,9 +75,10 @@ Read the adapter file at `$ARGUMENTS` and extract:
 - The ProcessApi object imported (e.g. `NewsletterSubscriptionProcessApi`)
 - Each public method: name, parameters, return type
 - Which `ProcessEngineApi` methods are called (`startProcess`, `sendMessage`, etc.)
-- Which ProcessApi constants are referenced (PROCESS*ID, Messages.*, Variables.\_, etc.)
+- Which generated constants are referenced (`PROCESS_ID`, `Messages.*`, `FlowNodes.<Node>.Variables.*`, etc.)
 
-Then read the ProcessApi file to confirm the exact constant names and nested object structure.
+Then read the ProcessApi file and the shared `Messages` file next to it to confirm the exact constant names and nested
+object structure.
 
 ### Step 2 – Locate the test file
 

@@ -49,13 +49,14 @@ If the styleguide does not exist, quit with an according error-message
 
 ### Step 2 – Read the ProcessApi file
 
-Locate the ProcessApi file (typically in `adapter/process/`). Read and extract:
+Locate the ProcessApi file (typically in `adapter/process/`) and the shared files generated next to it. Read and
+extract:
 
 - `PROCESS_ID` constant
-- All `TaskTypes.*` constants
-- All `Messages.*` constants
-- All `Variables.*` constants
-- All `Elements.*` constants
+- All `FlowNodes.*` elements (their ids, `Next` successors and `Variables`)
+- All `ServiceTasks.*` constants (shared file)
+- All `Messages.*` constants (shared file)
+- All `ProcessVariables.*` constants (shared file)
 
 If you cannot find a ProcessApi, ask the user to provide a path.
 
@@ -86,7 +87,7 @@ In this case, it should be reviewed by the user.
 Locate the process integration test (typically in `test/.../adapter/process/`). Identify:
 
 - Which process paths are tested (happy path, timer expiry, abort, etc.)
-- Which elements are asserted with `hasCompletedElement`
+- Which elements are asserted (`ProcessPath` walks with `hasCompletedElementsInOrder`, or `hasCompletedElement`)
 
 ### Step 6 – Produce the consistency report
 
@@ -101,8 +102,7 @@ gaps.
 **ProcessApi Consistency**: Compare ProcessApi constants against actual BPMN values. Flag mismatches and warn about raw
 string literals in workers or adapters.
 
-**Variable Coverage**: List variables used in workers and adapters. Verify they appear in `Variables.*` in the
-ProcessApi.
+**Variable Coverage**: List variables used in workers and adapters. Verify they appear in `ProcessVariables.*`.
 
 **Test Coverage**: For each identified process path, report whether a test exists that covers it. Also report whether
 each worker and process-adapter are covered as well

@@ -22,11 +22,13 @@ outdated constant references.
 
 ## IMPORTANT
 
-- All string constants must come from the ProcessApi — never use raw string literals
+- All string constants must come from the generated API (the ProcessApi and the shared `Messages` / `Signals` files next
+  to it) — never use raw string literals
 - `startProcess(processId = ...)` must reference `ProcessApi.PROCESS_ID`
-- `sendMessage(messageName = ...)` must reference `ProcessApi.Messages.CONSTANT`
+- `sendMessage(messageName = ...)` must reference `Messages.CONSTANT`
 - always pass `correlationId` to correlate the message with the right process instance
-- Variable keys in `startProcess` must reference `ProcessApi.Variables.CONSTANT`
+- Variable keys in `startProcess` / `sendMessage` must reference the typed
+  `ProcessApi.FlowNodes.<Node>.Variables.CONSTANT`
 - Method names come from the outbound port interface
 - Method signatures must accept **domain types** (not raw `String` or `UUID`). Inside the method body, extract
   the primitive with `.value.toString()` (or `.value`) before passing to `engineApi`.
@@ -40,13 +42,13 @@ class YourProcessAdapter(private val engineApi: ProcessEngineApi) : YourProcess 
     override fun startSomething(id: YourId) {
         engineApi.startProcess(
             processId = ProcessApi.PROCESS_ID,
-            variables = mapOf("test" to id.value.toString())
+            variables = mapOf(ProcessApi.FlowNodes.StartEvent.Variables.ID to id.value.toString())
         )
     }
 
     override fun sendSomething(id: YourId) {
         engineApi.sendMessage(
-            messageName = ProcessApi.Messages.CONSTANT,
+            messageName = Messages.CONSTANT,
             correlationId = id.value.toString()
         )
     }
@@ -61,8 +63,9 @@ See `references/process-adapter-template.kt` for the full annotated example.
 
 Determine where the process constants come from based on `$ARGUMENTS`:
 
-- **ProcessApi file (`.kt`)**: read it directly. Extract: package name, object name, `PROCESS_ID`, all `Messages.*`
-  constants, all `Signals.*` constants (if present), all `Variables.*` constants.
+- **ProcessApi file (`.kt`)**: read it directly. Extract: package name, object name, `PROCESS_ID` and the `Variables` of
+  each `FlowNodes` element. Then read the shared `Messages` and `Signals` (if present) files generated in the same
+  package.
 - **BPMN file (`.bpmn`)**: search the same service module for a `*ProcessApi.kt` file
   (Glob `**/adapter/process/*ProcessApi.kt`). If found, read it as above. If not found, ask the user whether to
   continue without type-safe constants.

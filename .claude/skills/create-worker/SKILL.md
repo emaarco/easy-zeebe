@@ -18,10 +18,10 @@ To generate workers for multiple service tasks, invoke this skill once per task.
 class YourWorker(private val useCase: YourUseCase) {
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = TaskTypes.CONSTANT)
-    fun handle(@Variable id: UUID): Map<String, Any> {
+    @JobWorker(type = ServiceTasks.CONSTANT)
+    fun handle(@Variable(name = ProcessVariables.ID) id: UUID): Map<String, Any> {
         useCase.execute(DomainType(id))
-        return mapOf(Variables.OUTPUT to value)
+        return mapOf(ProcessVariables.OUTPUT to value)
     }
 }
 ```
@@ -30,7 +30,8 @@ See `references/worker-template.kt` for all variants (void, return, dynamic outp
 
 ## IMPORTANT
 
-- `@JobWorker(type = ...)` must reference `ProcessApi.TaskTypes.CONSTANT` — not a hardcoded string
+- `@JobWorker(type = ...)` must reference `ServiceTasks.CONSTANT` — not a hardcoded string
+- Variable names must reference `ProcessVariables.CONSTANT` — in `@Variable(name = ...)` and as keys of the returned map
 - Inject the use-case interface as the only constructor parameter
 - Never depend on the Camunda SDK in the constructor
 - Use `@Variable` by default to get process variables
@@ -54,6 +55,9 @@ Based on `$ARGUMENTS`:
   the user to pick.
 - If no arguments are provided: Glob `**/bpmn/*.bpmn` and `**/adapter/process/*ProcessApi.*` across the codebase. List
   results and ask the user to select.
+
+`ServiceTasks` and `ProcessVariables` are generated next to the ProcessApi (same package, `ServiceTasks.kt` /
+`ProcessVariables.kt`) — read them too.
 
 **Interrupt if:**
 
@@ -79,9 +83,10 @@ the matching Kotlin constant for code generation.
 **From the ProcessApi (for code generation only):**
 
 - Extract the package name, object/class name, and the file extension (`.kt` → Kotlin, `.java` → Java).
-- Find the `TaskTypes.*` constant whose value matches the task type string extracted from the BPMN — this constant is
-  used in the `@JobWorker(type = ...)` annotation.
-- Extract all `Variables.*` constants (used when referencing output variable names in code).
+- Find the `ServiceTasks.*` constant (generated next to the ProcessApi) whose value matches the task type string
+  extracted from the BPMN — this constant is used in the `@JobWorker(type = ...)` annotation.
+- Extract all `ProcessVariables.*` constants (generated next to the ProcessApi; used in `@Variable(name = ...)` and for
+  output variable names in code).
 
 ### Step 3 – Determine Worker Location
 
@@ -113,14 +118,14 @@ Pick the reference template based on the language detected in Step 1:
 **If the file does not exist — generate:**
 
 - `@Component` class with the constructor parameter for the use-case resolved in Step 4
-- `@JobWorker(type = TaskTypes.THE_CONSTANT)` on the `handle` method
-- `@Variable` parameters derived from the BPMN input mappings identified in Step 2; use `@VariableAsType` only when a
+- `@JobWorker(type = ServiceTasks.THE_CONSTANT)` on the `handle` method
+- `@Variable(name = ProcessVariables.THE_CONSTANT)` parameters derived from the BPMN input mappings identified in Step 2; use `@VariableAsType` only when a
   typed class already exists or many variables are needed — both from `io.camunda.client.annotation`
 - Logger: `KotlinLogging.logger {}` (Kotlin) / `LoggerFactory.getLogger(WorkerName.class)` (Java)
 - Scan `**/domain/` for an existing value object matching each input variable (e.g. `NEWSLETTER_ID` → `NewsletterId`).
   **Never** leave a `TODO` for domain-type substitution — resolve or create the type.
 - **Return type rule**: if the BPMN output mappings from Step 2 are non-empty, use `Map<String, Any>` and
-  `return mapOf(Variables.CONSTANT to value)`. Otherwise omit the return type (`Unit` / `void`). Use the dynamic-output
+  `return mapOf(ProcessVariables.CONSTANT to value)`. Otherwise omit the return type (`Unit` / `void`). Use the dynamic-output
   variant from the template when the map contents depend on the use-case result.
 
 **If the file already exists — update:**
