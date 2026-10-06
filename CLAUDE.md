@@ -65,7 +65,7 @@ Some important ones are listed below – for the others, consider using the grad
 ./gradlew :services:common-zeebe:test
 
 # Generate BPMN models from BPMN files
-./gradlew :services:example-service:generateBpmnModels
+./gradlew :services:example-service:generateBpmnModelApi
 
 # Clean build artifacts
 ./gradlew clean

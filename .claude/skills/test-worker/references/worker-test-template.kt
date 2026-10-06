@@ -41,4 +41,4 @@ class WorkerNameTest {
 //   import java.util.Map.entry
 //
 // val result = underTest.handle(subscriptionId)
-// assertThat(result).containsExactly(entry(ProcessApi.Variables.VARIABLE_NAME, expectedValue))
+// assertThat(result).containsExactly(entry(ProcessVariables.VARIABLE_NAME, expectedValue))

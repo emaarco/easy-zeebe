@@ -13,6 +13,9 @@ import io.camunda.process.test.api.CamundaAssert
 import io.camunda.process.test.api.CamundaProcessTestContext
 import io.camunda.process.test.api.CamundaSpringProcessTest
 import io.camunda.process.test.api.assertions.ProcessInstanceSelectors
+import io.miragon.bpmn.runtime.path.ProcessPath
+import io.miragon.bpmn.runtime.path.then
+import io.miragon.common.test.assertions.hasCompletedElementsInOrder
 import io.miragon.common.test.config.TestProcessEngineConfiguration
 import io.mockk.Called
 import io.mockk.Runs
@@ -64,6 +67,10 @@ class <ProcessName>ProcessTest {
     // HAPPY PATH
     // Drive the process via the process adapter from start to completion.
     // Use distinct UUIDs per test to avoid correlation conflicts.
+    // Walk the expected path with ProcessPath: every step is checked against
+    // the model at compile time. Further steps (import from
+    // io.miragon.bpmn.runtime.path): onto / inside / enter for subprocesses,
+    // interruptedBy for boundary events, throwingCompensation for compensations.
     // ════════════════════════════════════════════════════════════════════════
 
     @Test
@@ -77,8 +84,13 @@ class <ProcessName>ProcessTest {
         // processPort.<sendMessageMethod>(...)    // include if a message completes the happy path
 
         // then
+        val expectedPath = ProcessPath.from(<ProcessApi>.FlowNodes.<StartEvent>)
+            .then { it.<firstElement> }
+            .then { it.<endEvent> }
+
         val instance = ProcessInstanceSelectors.byKey(instanceKey)
         CamundaAssert.assertThatProcessInstance(instance).isCompleted()
+        CamundaAssert.assertThatProcessInstance(instance).hasCompletedElementsInOrder(expectedPath)
         verify { <useCase1>.<method>(<DomainId>(id)) }
         // verify { <useCase2> wasNot Called }
         confirmVerified(<useCase1> /*, <useCase2>*/)
@@ -129,8 +141,8 @@ class <ProcessName>ProcessTest {
         // given - start directly at the element that has the timer attached
         val id = UUID.fromString("<unique-uuid-3>")
         val instance = startProcessAt(
-            elementId = <ProcessApi>.Elements.<ELEMENT_WITH_TIMER>,
-            variables  = mapOf(<ProcessApi>.Variables.<ID_VAR> to id.toString())
+            elementId = <ProcessApi>.FlowNodes.<ElementWithTimer>.id.value,
+            variables  = mapOf(ProcessVariables.<ID_VAR> to id.toString())
         )
 
         // when - advance time past the timer duration
@@ -138,7 +150,7 @@ class <ProcessName>ProcessTest {
 
         // then
         CamundaAssert.assertThatProcessInstance(instance)
-            .hasCompletedElement(<ProcessApi>.Elements.<TASK_AFTER_TIMER>, 1)
+            .hasCompletedElement(<ProcessApi>.FlowNodes.<TaskAfterTimer>.id.value, 1)
         CamundaAssert.assertThatProcessInstance(instance).isCompleted()
         verify { <useCase1>.<method>(<DomainId>(id)) }
         // verify { <useCase2> wasNot Called }
@@ -160,8 +172,8 @@ class <ProcessName>ProcessTest {
         // given - jump to a specific element
         val id = UUID.fromString("<unique-uuid-4>")
         val instance = startProcessAt(
-            elementId = <ProcessApi>.Elements.<TARGET_ELEMENT>,
-            variables  = mapOf(<ProcessApi>.Variables.<ID_VAR> to id.toString())
+            elementId = <ProcessApi>.FlowNodes.<TargetElement>.id.value,
+            variables  = mapOf(ProcessVariables.<ID_VAR> to id.toString())
         )
 
         // when / then
@@ -175,7 +187,7 @@ class <ProcessName>ProcessTest {
     /*
     private fun startProcessAt(elementId: String, variables: Map<String, Any>): ProcessInstanceEvent {
         return camundaClient.newCreateInstanceCommand()
-            .bpmnProcessId(<ProcessApi>.PROCESS_ID)
+            .bpmnProcessId(<ProcessApi>.PROCESS_ID.value)
             .latestVersion()
             .variables(variables)
             .startBeforeElement(elementId)

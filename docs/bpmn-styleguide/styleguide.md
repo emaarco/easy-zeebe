@@ -209,8 +209,8 @@ and reduces the risk of variable name typos.
 class SendWelcomeMailWorker(
     private val sendWelcomeMailUseCase: SendWelcomeMailUseCase,
 ) {
-    @JobWorker(type = MiraveloMembershipProcessApi.TaskTypes.MIRAVELO_SEND_WELCOME_MAIL)
-    fun handle(@Variable membershipId: UUID) {
+    @JobWorker(type = ServiceTasks.MIRAVELO_SEND_WELCOME_MAIL)
+    fun handle(@Variable(name = ProcessVariables.MEMBERSHIP_ID) membershipId: UUID) {
         sendWelcomeMailUseCase.sendWelcomeMail(MembershipId(membershipId))
     }
 }
@@ -223,7 +223,7 @@ When multiple variables are required, use a typed input class:
 class ProcessOrderWorker(
     private val processOrderUseCase: ProcessOrderUseCase,
 ) {
-    @JobWorker(type = OrderProcessApi.TaskTypes.ORDER_PROCESS_ORDER)
+    @JobWorker(type = ServiceTasks.ORDER_PROCESS_ORDER)
     fun handle(@VariableAsType input: Input) {
         processOrderUseCase.processOrder(
             orderId = OrderId(input.orderId),

@@ -24,6 +24,11 @@ It will switch to update mode and only append the new test methods.
 - Drive the process via the process adapter (`processPort.*`) not via `camundaClient` directly, except when using
   `startBeforeElement` for mid-process scenarios
 - Use `ProcessInstanceSelectors.byKey(instanceKey)` to create the selector for assertions
+- Assert the walked path with a compile-checked `ProcessPath` over `ProcessApi.FlowNodes` and
+  `hasCompletedElementsInOrder(path)` (from `io.miragon.common.test.assertions`) — never hand-written element-id lists.
+  Steps: `then { it.next }` along a flow, `onto { it.sub }.inside { enter { it.start }… }` through a subprocess,
+  `interruptedBy(host) { it.boundaryEvent }` when a boundary event fires,
+  `throwingCompensation(boundaryEvent) { it.handler }` on the event that throws a compensation
 - Always end each test with `confirmVerified(...)` across all mocked use cases to catch unexpected interactions
 - Use `verify { useCase wasNot Called }` for negative assertions (not `verify(exactly = 0) { ... }`)
 
@@ -51,7 +56,11 @@ class NewsletterProcessTest {
         val instanceKey = processPort.startNewsletterSubscription(NewsletterSubscriptionId("uuid-1"))
         val selector = ProcessInstanceSelectors.byKey(instanceKey)
 
-        CamundaAssert.assertThat(selector).hasCompletedElement("serviceTask_subscribe")
+        val expectedPath = ProcessPath.from(NewsletterSubscriptionProcessApi.FlowNodes.StartEventFormSubmitted)
+            .then { it.serviceTaskSubscribe }
+            .then { it.endEventSubscribed }
+
+        CamundaAssert.assertThatProcessInstance(selector).hasCompletedElementsInOrder(expectedPath)
         verify { subscribeUseCase.execute(any()) }
         confirmVerified(subscribeUseCase)
     }
@@ -127,7 +136,8 @@ Present the paths derived in Step 2 to the user using `AskUserQuestion` with `mu
 
 - Search for `adapter/process/*ProcessApi.kt` in the same module as the BPMN file.
 - If not found, use `AskUserQuestion` to ask the user to provide the path, then read it.
-- Extract: `PROCESS_ID`, and all constants under `TaskTypes`, `Messages`, `Variables`, `Elements`.
+- Extract: `PROCESS_ID` and the `FlowNodes` (one object per BPMN element, with its successors in `Next`).
+- Also read the shared `ServiceTasks`, `Messages` and `ProcessVariables` files generated in the same package.
 
 #### 4.2 – Process adapter
 
@@ -169,7 +179,10 @@ selected in Step 3. Apply these rules when adapting the template:
   tests
 - **Timer path** → include `processTestContext.increaseTime(Duration.of...)` with the correct duration; start at
   the appropriate element via `startProcessAt` if skipping earlier tasks is needed
-- **Mid-process / boundary event path** → use `startProcessAt` with the correct element ID from `ProcessApi.Elements`
+- **Mid-process / boundary event path** → use `startProcessAt` with the element ID from
+  `ProcessApi.FlowNodes.<Node>.id.value`
+- **Path assertion** → build `expectedPath` with `ProcessPath` from the start node of the tested path and assert it
+  with `hasCompletedElementsInOrder(expectedPath)`
 - **`startProcessAt` helper** → include the private helper only if at least one selected path uses it
 - **`camundaClient` and `processTestContext` fields** → include only when at least one selected path needs them
 

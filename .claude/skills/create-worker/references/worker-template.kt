@@ -1,5 +1,5 @@
 // Worker class template — replace all placeholders before use
-// Placeholders: WorkerName, TaskTypes.CONSTANT, UseCaseInterface, useCaseMethod, DomainType, Variables.CONSTANT
+// Placeholders: WorkerName, ServiceTasks.CONSTANT, UseCaseInterface, useCaseMethod, DomainType, ProcessVariables.CONSTANT
 
 import io.camunda.client.annotation.JobWorker
 import io.camunda.client.annotation.Variable
@@ -18,8 +18,8 @@ class <Name>Worker(
 
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = TaskTypes.CONSTANT)
-    fun handle(@Variable subscriptionId: UUID) {
+    @JobWorker(type = ServiceTasks.CONSTANT)
+    fun handle(@Variable(name = ProcessVariables.SUBSCRIPTION_ID) subscriptionId: UUID) {
         log.debug { "Received job for subscriptionId: $subscriptionId" }
         useCase.useCaseMethod(DomainType(subscriptionId))
     }
@@ -36,11 +36,11 @@ class <Name>Worker(
 
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = TaskTypes.CONSTANT)
-    fun handle(@Variable subscriptionId: UUID): Map<String, Any> {
+    @JobWorker(type = ServiceTasks.CONSTANT)
+    fun handle(@Variable(name = ProcessVariables.SUBSCRIPTION_ID) subscriptionId: UUID): Map<String, Any> {
         log.debug { "Received job for subscriptionId: $subscriptionId" }
         useCase.useCaseMethod(DomainType(subscriptionId))
-        return mapOf(Variables.VARIABLE_NAME to value)
+        return mapOf(ProcessVariables.VARIABLE_NAME to value)
     }
 }
 
@@ -55,16 +55,16 @@ class <Name>Worker(
 
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = TaskTypes.CONSTANT)
-    fun handle(@Variable subscriptionId: UUID): Map<String, Any> {
+    @JobWorker(type = ServiceTasks.CONSTANT)
+    fun handle(@Variable(name = ProcessVariables.SUBSCRIPTION_ID) subscriptionId: UUID): Map<String, Any> {
         log.debug { "Received job for subscriptionId: $subscriptionId" }
         val result = useCase.useCaseMethod(DomainType(subscriptionId))
 
         return when (result) {
-            null -> mapOf(Variables.FOUND to false)
+            null -> mapOf(ProcessVariables.FOUND to false)
             else -> mapOf(
-                Variables.FOUND to true,
-                Variables.RESULT to result.asValue()
+                ProcessVariables.FOUND to true,
+                ProcessVariables.RESULT to result.asValue()
             )
         }
     }
@@ -72,4 +72,4 @@ class <Name>Worker(
 
 // Variations:
 // @VariableAsType: fun handle(@VariableAsType variables: MyVarsClass) { ... }
-// Multiple static output variables: return mapOf(Variables.A to valueA, Variables.B to valueB)
+// Multiple static output variables: return mapOf(ProcessVariables.A to valueA, ProcessVariables.B to valueB)

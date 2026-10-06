@@ -1,5 +1,5 @@
 // Worker class template (Java) — replace all placeholders before use
-// Placeholders: <Name>Worker, TaskTypes.CONSTANT, UseCaseInterface, useCaseMethod, DomainType, Variables.CONSTANT
+// Placeholders: <Name>Worker, ServiceTasks.CONSTANT, UseCaseInterface, useCaseMethod, DomainType, ProcessVariables.CONSTANT
 
 import io.camunda.client.annotation.JobWorker;
 import io.camunda.client.annotation.Variable;
@@ -25,8 +25,8 @@ public class <Name>Worker {
         this.useCase = useCase;
     }
 
-    @JobWorker(type = TaskTypes.CONSTANT)
-    public void handle(@Variable UUID subscriptionId) {
+    @JobWorker(type = ServiceTasks.CONSTANT)
+    public void handle(@Variable(name = ProcessVariables.SUBSCRIPTION_ID) UUID subscriptionId) {
         log.debug("Received job for subscriptionId: {}", subscriptionId);
         useCase.useCaseMethod(new DomainType(subscriptionId));
     }
@@ -47,15 +47,15 @@ public class <Name>Worker {
         this.useCase = useCase;
     }
 
-    @JobWorker(type = TaskTypes.CONSTANT)
-    public Map<String, Object> handle(@Variable UUID subscriptionId) {
+    @JobWorker(type = ServiceTasks.CONSTANT)
+    public Map<String, Object> handle(@Variable(name = ProcessVariables.SUBSCRIPTION_ID) UUID subscriptionId) {
         log.debug("Received job for subscriptionId: {}", subscriptionId);
         useCase.useCaseMethod(new DomainType(subscriptionId));
-        return Map.of(Variables.VARIABLE_NAME, value);
+        return Map.of(ProcessVariables.VARIABLE_NAME, value);
     }
 }
 
 // Variations:
 // @VariableAsType: public void handle(@VariableAsType MyVarsClass variables) { ... }
-// Multiple output variables: return Map.of(Variables.A, valueA, Variables.B, valueB);
+// Multiple output variables: return Map.of(ProcessVariables.A, valueA, ProcessVariables.B, valueB);
 // Lombok: replace logger field + constructor with @Slf4j and @RequiredArgsConstructor on the class
