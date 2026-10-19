@@ -8,7 +8,6 @@
 > | BPMN styleguide, `verify-model-visually`, `fix-model-layout`, the CI quality-gate example | [Miragon/bpmnlint-rules](https://github.com/Miragon/bpmnlint-rules/tree/main/plugins/bpmnlint-rules) |
 > | Message-name and job-type lint rules | [Miragon/bpmnlint-rules#68](https://github.com/Miragon/bpmnlint-rules/issues/68) |
 > | BPMN editing and auto-layout for agents | [Miragon/bpmn-cli](https://github.com/Miragon/bpmn-cli) |
-> | The MiraVelo process models | [Miragon/miravelo-reference](https://github.com/Miragon/miravelo-reference) |
 
 > 🚲 **easy-zeebe is a template — clone it, learn from it, adapt it.**
 > It shows how to orchestrate business processes with Zeebe and Spring Boot while applying the practices
